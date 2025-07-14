@@ -92,9 +92,10 @@ function downloadReportCSV() {
   if (!lastStats) return;
   let csv = '';
   // Estadísticas
-  csv += 'Estadísticas por formato:\n';
+  csv += 'Formato,Cantidad,Peso total (KB)\n';
   Object.entries(lastStats.formatCounts).forEach(([format, count]) => {
-    csv += `${format},${count}\n`;
+    const totalKB = lastStats.formatSizes && lastStats.formatSizes[format] ? lastStats.formatSizes[format] : 0;
+    csv += `${format},${count},${totalKB}\n`;
   });
   csv += '\nListado de imágenes:\n';
   csv += 'Tipo,URL,Formato,Peso (KB)\n';
@@ -126,43 +127,52 @@ function updateStatsAndList() {
     return;
   }
   getImageStatsAndList().then(stats => {
-    // Detectar tipo (img o bg) para cada imagen
+    // Filtrar URLs únicas
+    const uniqueMap = new Map();
     stats.imageList.forEach(img => {
-      if (img.isBackground) {
-        img.type = 'bg';
-      } else {
-        img.type = 'img';
+      if (!uniqueMap.has(img.url)) {
+        uniqueMap.set(img.url, img);
       }
     });
-    lastStats = stats;
-    document.getElementById('total-images').textContent = stats.total;
+    const uniqueList = Array.from(uniqueMap.values());
+    // Calcular peso total y conteo por formato solo con URLs únicas
+    const formatCounts = {};
+    const formatSizes = {};
+    uniqueList.forEach(img => {
+      formatCounts[img.format] = (formatCounts[img.format] || 0) + 1;
+      if (!formatSizes[img.format]) formatSizes[img.format] = 0;
+      if (typeof img.size === 'number') formatSizes[img.format] += img.size;
+    });
+    lastStats = { ...stats, imageList: uniqueList, formatCounts, formatSizes };
+    document.getElementById('total-images').textContent = uniqueList.length;
     const breakdown = document.getElementById('format-breakdown');
     breakdown.innerHTML = '';
-    if (stats.total === 0) {
+    if (uniqueList.length === 0) {
       breakdown.innerHTML = '<div class="format-count"><span>No se han detectado imágenes</span></div>';
     } else {
-      Object.entries(stats.formatCounts).forEach(([format, count]) => {
+      Object.entries(formatCounts).forEach(([format, count]) => {
         const div = document.createElement('div');
         div.className = 'format-count';
         const color = getFormatColor(format);
-        div.innerHTML = `<span style="color: ${color}; font-weight: bold;">${format}:</span><span>${count}</span>`;
+        const totalKB = formatSizes[format] || 0;
+        div.innerHTML = `<span style=\"color: ${color}; font-weight: bold;\">${format}:</span> <span>${count} imagen${count === 1 ? '' : 'es'} — ${totalKB} KB</span>`;
         breakdown.appendChild(div);
       });
     }
     // Tabla de imágenes
     const imageListTbody = document.getElementById('image-list');
     imageListTbody.innerHTML = '';
-    if (stats.imageList.length === 0) {
+    if (uniqueList.length === 0) {
       imageListTbody.innerHTML = '<tr><td colspan="3">No se han detectado imágenes</td></tr>';
     } else {
       // Ordenar por peso de mayor a menor (nulls al final)
-      stats.imageList.sort((a, b) => {
+      uniqueList.sort((a, b) => {
         if (b.size == null && a.size == null) return 0;
         if (b.size == null) return -1;
         if (a.size == null) return 1;
         return b.size - a.size;
       });
-      stats.imageList.forEach(img => {
+      uniqueList.forEach(img => {
         const tr = document.createElement('tr');
         // URL clickeable
         const tdUrl = document.createElement('td');
