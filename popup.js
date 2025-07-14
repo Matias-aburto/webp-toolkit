@@ -40,8 +40,8 @@ function updateUI() {
   }
 }
 
-// Función para obtener estadísticas de las imágenes en la página actual
-function getImageStats() {
+// Función para obtener estadísticas y lista de imágenes en la página actual
+function getImageStatsAndList() {
   return new Promise((resolve) => {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       chrome.scripting.executeScript({
@@ -50,23 +50,34 @@ function getImageStats() {
           const images = document.querySelectorAll('img[data-format-detected]');
           const formatCounts = {};
           let total = 0;
-          
+          const imageList = [];
           images.forEach(img => {
-            const label = img.closest('div')?.querySelector('div[style*="position: absolute"]');
+            const label = img.closest('.img-border-container')?.querySelector('div[style*="position: absolute"]');
             if (label) {
-              const format = label.textContent;
+              const format = label.childNodes[0]?.textContent || label.textContent;
+              let size = null;
+              // Buscar el span del peso
+              const sizeSpan = label.querySelector('span');
+              if (sizeSpan) {
+                const match = sizeSpan.textContent.match(/(\d+) KB/);
+                if (match) size = parseInt(match[1], 10);
+              }
               formatCounts[format] = (formatCounts[format] || 0) + 1;
               total++;
+              imageList.push({
+                url: img.src,
+                format: format,
+                size: size
+              });
             }
           });
-          
-          return { total, formatCounts };
+          return { total, formatCounts, imageList };
         }
       }, (results) => {
         if (results && results[0] && results[0].result) {
           resolve(results[0].result);
         } else {
-          resolve({ total: 0, formatCounts: {} });
+          resolve({ total: 0, formatCounts: {}, imageList: [] });
         }
       });
     });
@@ -90,20 +101,18 @@ function getFormatColor(format) {
   return colorMap[format] || '#000000';
 }
 
-// Función para actualizar la interfaz con las estadísticas
-function updateStats() {
+// Función para actualizar la interfaz con las estadísticas y la tabla
+function updateStatsAndList() {
   if (!isActive) {
     document.getElementById('total-images').textContent = '0';
     document.getElementById('format-breakdown').innerHTML = '<div class="format-count"><span>Extensión desactivada</span></div>';
+    document.getElementById('image-list').innerHTML = '<tr><td colspan="3">Extensión desactivada</td></tr>';
     return;
   }
-  
-  getImageStats().then(stats => {
+  getImageStatsAndList().then(stats => {
     document.getElementById('total-images').textContent = stats.total;
-    
     const breakdown = document.getElementById('format-breakdown');
     breakdown.innerHTML = '';
-    
     if (stats.total === 0) {
       breakdown.innerHTML = '<div class="format-count"><span>No se han detectado imágenes</span></div>';
     } else {
@@ -115,6 +124,40 @@ function updateStats() {
         breakdown.appendChild(div);
       });
     }
+    // Tabla de imágenes
+    const imageListTbody = document.getElementById('image-list');
+    imageListTbody.innerHTML = '';
+    if (stats.imageList.length === 0) {
+      imageListTbody.innerHTML = '<tr><td colspan="3">No se han detectado imágenes</td></tr>';
+    } else {
+      // Ordenar por peso de mayor a menor (nulls al final)
+      stats.imageList.sort((a, b) => {
+        if (b.size == null && a.size == null) return 0;
+        if (b.size == null) return -1;
+        if (a.size == null) return 1;
+        return b.size - a.size;
+      });
+      stats.imageList.forEach(img => {
+        const tr = document.createElement('tr');
+        // URL clickeable
+        const tdUrl = document.createElement('td');
+        tdUrl.className = 'image-list-url';
+        tdUrl.title = img.url;
+        tdUrl.textContent = img.url;
+        tdUrl.style.cursor = 'pointer';
+        tdUrl.onclick = () => window.open(img.url, '_blank');
+        // Formato
+        const tdFormat = document.createElement('td');
+        tdFormat.textContent = img.format;
+        // Peso
+        const tdSize = document.createElement('td');
+        tdSize.textContent = img.size != null ? img.size : '-';
+        tr.appendChild(tdUrl);
+        tr.appendChild(tdFormat);
+        tr.appendChild(tdSize);
+        imageListTbody.appendChild(tr);
+      });
+    }
   });
 }
 
@@ -123,13 +166,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Obtener el estado inicial
   isActive = await getExtensionStatus();
   updateUI();
-  
   // Configurar el botón de toggle
   document.getElementById('toggle-button').addEventListener('click', toggleExtension);
-  
-  // Actualizar estadísticas iniciales
-  updateStats();
+  // Actualizar estadísticas y lista iniciales
+  updateStatsAndList();
 });
-
-// Actualizar cada 2 segundos para mantener las estadísticas actualizadas
-setInterval(updateStats, 2000); 
+// Actualizar cada 2 segundos para mantener las estadísticas y la lista actualizadas
+setInterval(updateStatsAndList, 2000); 
