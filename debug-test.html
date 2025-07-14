@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - Image Format Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .test-section h2 {
+            color: #555;
+            margin-bottom: 15px;
+        }
+        
+        .image-item {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .image-item img {
+            max-width: 200px;
+            height: auto;
+            border-radius: 5px;
+        }
+        
+        .debug-info {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        
+        .url-info {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .expected-format {
+            font-weight: bold;
+            color: #2196f3;
+        }
+        
+        .actual-format {
+            font-weight: bold;
+            color: #4caf50;
+        }
+        
+        .error-format {
+            font-weight: bold;
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Test - Image Format Detector</h1>
+        
+        <div class="test-section">
+            <h2>🖼️ Casos de prueba con extensiones claras</h2>
+            
+            <div class="image-item">
+                <div class="url-info">URL: https://via.placeholder.com/200x150/ff6b6b/ffffff?text=PNG+Image.png</div>
+                <img src="https://via.placeholder.com/200x150/ff6b6b/ffffff?text=PNG+Image.png" alt="PNG Test">
+                <div class="debug-info">
+                    <div class="expected-format">Esperado: PNG</div>
+                    <div class="actual-format" id="result-png">Detectado: <span id="detected-png">...</span></div>
+                </div>
+            </div>
+            
+            <div class="image-item">
+                <div class="url-info">URL: https://via.placeholder.com/200x150/4ecdc4/ffffff?text=JPG+Image.jpg</div>
+                <img src="https://via.placeholder.com/200x150/4ecdc4/ffffff?text=JPG+Image.jpg" alt="JPG Test">
+                <div class="debug-info">
+                    <div class="expected-format">Esperado: JPG</div>
+                    <div class="actual-format" id="result-jpg">Detectado: <span id="detected-jpg">...</span></div>
+                </div>
+            </div>
+            
+            <div class="image-item">
+                <div class="url-info">URL: https://via.placeholder.com/200x150/feca57/ffffff?text=GIF+Image.gif</div>
+                <img src="https://via.placeholder.com/200x150/feca57/ffffff?text=GIF+Image.gif" alt="GIF Test">
+                <div class="debug-info">
+                    <div class="expected-format">Esperado: GIF</div>
+                    <div class="actual-format" id="result-gif">Detectado: <span id="detected-gif">...</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🖼️ Casos de prueba con URLs complejas</h2>
+            
+            <div class="image-item">
+                <div class="url-info">URL: https://simetry.cl/wp-content/uploads/2024/07/3.png</div>
+                <img src="https://simetry.cl/wp-content/uploads/2024/07/3.png" alt="Real PNG">
+                <div class="debug-info">
+                    <div class="expected-format">Esperado: PNG</div>
+                    <div class="actual-format" id="result-real-png">Detectado: <span id="detected-real-png">...</span></div>
+                </div>
+            </div>
+            
+            <div class="image-item">
+                <div class="url-info">URL: https://example.com/images/photo.jpg?width=300&height=200</div>
+                <img src="https://via.placeholder.com/200x150/45b7d1/ffffff?text=JPG+with+params.jpg" alt="JPG with params">
+                <div class="debug-info">
+                    <div class="expected-format">Esperado: JPG</div>
+                    <div class="actual-format" id="result-jpg-params">Detectado: <span id="detected-jpg-params">...</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🖼️ Casos de prueba sin extensión</h2>
+            
+            <div class="image-item">
+                <div class="url-info">URL: https://via.placeholder.com/200x150/6c5ce7/ffffff?text=No+Extension</div>
+                <img src="https://via.placeholder.com/200x150/6c5ce7/ffffff?text=No+Extension" alt="No Extension">
+                <div class="debug-info">
+                    <div class="expected-format">Esperado: Unknown</div>
+                    <div class="actual-format" id="result-no-ext">Detectado: <span id="detected-no-ext">...</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Información de debug</h2>
+            <div id="debug-console" style="background: #000; color: #0f0; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;">
+                <div>Consola de debug - Abre las herramientas de desarrollador (F12) para ver logs detallados</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Función para extraer la extensión de una URL de imagen
+        function extractExtensionFromUrl(url) {
+          try {
+            // Remover parámetros de query y fragmentos
+            const cleanUrl = url.split('?')[0].split('#')[0];
+            
+            // Buscar la extensión en diferentes partes de la URL
+            const urlParts = cleanUrl.split('.');
+            if (urlParts.length > 1) {
+              const extension = urlParts[urlParts.length - 1].toLowerCase();
+              
+              // Verificar que sea una extensión válida de imagen
+              const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'tiff', 'tif'];
+              if (validExtensions.includes(extension)) {
+                return extension;
+              }
+            }
+            
+            // Si no se encontró en la URL completa, intentar con el pathname
+            const urlObj = new URL(url, window.location.href);
+            const pathname = urlObj.pathname;
+            const pathParts = pathname.split('.');
+            if (pathParts.length > 1) {
+              const extension = pathParts[pathParts.length - 1].toLowerCase();
+              const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico', 'tiff', 'tif'];
+              if (validExtensions.includes(extension)) {
+                return extension;
+              }
+            }
+            
+            return null;
+          } catch (error) {
+            console.error('Error extracting extension from URL:', url, error);
+            return null;
+          }
+        }
+
+        // Función para detectar el formato de una imagen
+        function detectImageFormat(img) {
+          const src = img.src || img.getAttribute('src');
+          if (!src) return 'Unknown';
+          
+          try {
+            // Método 1: Extraer extensión de la URL
+            let extension = extractExtensionFromUrl(src);
+            
+            // Método 2: Intentar detectar por el tipo MIME si la imagen ya está cargada
+            if (!extension && img.complete && img.naturalWidth > 0) {
+              try {
+                // Crear un canvas para detectar el tipo
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 1;
+                canvas.height = 1;
+                ctx.drawImage(img, 0, 0, 1, 1);
+                
+                // Intentar obtener el tipo MIME
+                const dataURL = canvas.toDataURL();
+                if (dataURL.startsWith('data:image/')) {
+                  const mimeType = dataURL.split(';')[0].split(':')[1];
+                  const mimeMap = {
+                    'image/png': 'PNG',
+                    'image/jpeg': 'JPG',
+                    'image/gif': 'GIF',
+                    'image/svg+xml': 'SVG',
+                    'image/webp': 'WebP',
+                    'image/bmp': 'BMP',
+                    'image/x-icon': 'ICO',
+                    'image/tiff': 'TIFF'
+                  };
+                  if (mimeMap[mimeType]) {
+                    console.log('Detected by MIME type:', mimeType);
+                    return mimeMap[mimeType];
+                  }
+                }
+              } catch (e) {
+                console.log('MIME detection failed:', e);
+              }
+            }
+            
+            // Mapear extensiones a formatos
+            const formatMap = {
+              'png': 'PNG',
+              'jpg': 'JPG',
+              'jpeg': 'JPG',
+              'gif': 'GIF',
+              'svg': 'SVG',
+              'webp': 'WebP',
+              'bmp': 'BMP',
+              'ico': 'ICO',
+              'tiff': 'TIFF',
+              'tif': 'TIFF'
+            };
+            
+            // Debug: Log para ver qué se está detectando
+            console.log('Image URL:', src);
+            console.log('Detected extension:', extension);
+            console.log('Format:', formatMap[extension] || 'Unknown');
+            
+            return formatMap[extension] || 'Unknown';
+          } catch (error) {
+            console.error('Error detecting format for image:', src, error);
+            return 'Unknown';
+          }
+        }
+
+        // Función para actualizar los resultados
+        function updateResults() {
+            const images = document.querySelectorAll('.image-item img');
+            
+            images.forEach((img, index) => {
+                const format = detectImageFormat(img);
+                const resultElement = document.querySelector(`#detected-${img.alt.toLowerCase().replace(/\s+/g, '-')}`);
+                
+                if (resultElement) {
+                    resultElement.textContent = format;
+                    
+                    // Cambiar color según el resultado
+                    const parentElement = resultElement.parentElement;
+                    if (format === 'Unknown') {
+                        parentElement.className = 'error-format';
+                    } else {
+                        parentElement.className = 'actual-format';
+                    }
+                }
+            });
+        }
+
+        // Actualizar resultados cuando las imágenes se carguen
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(updateResults, 1000); // Esperar un poco para que las imágenes se carguen
+        });
+
+        // Actualizar cada 2 segundos para capturar cambios
+        setInterval(updateResults, 2000);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Test - Image Format Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        
+        .color-legend {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .color-legend h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .color-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            margin-right: 15px;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .color-box.green {
+            background: #008000;
+        }
+        
+        .color-box.orange {
+            background: #FF7518;
+        }
+        
+        .color-box.black {
+            background: #000000;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .test-section h2 {
+            color: #555;
+            margin-bottom: 15px;
+        }
+        
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .image-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .image-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        
+        .image-caption {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .expected-color {
+            margin-top: 5px;
+            font-size: 11px;
+            color: #888;
+        }
+        
+        .info-box {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .info-box h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .info-box p {
+            margin: 8px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Color Test - Image Format Detector</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instrucciones para probar el sistema de colores:</h3>
+            <ol>
+                <li><strong>Activa la extensión</strong>: Haz clic en el icono de la extensión</li>
+                <li><strong>Observa los colores</strong>: Cada formato tiene su color específico</li>
+                <li><strong>Verifica la leyenda</strong>: Compara con la leyenda de colores</li>
+                <li><strong>Desactiva y reactiva</strong>: Prueba que los colores se mantienen</li>
+            </ol>
+        </div>
+        
+        <div class="color-legend">
+            <h3>🎨 Leyenda de colores</h3>
+            <div class="legend-item">
+                <div class="color-box green">🟢</div>
+                <span><strong>Verde (#008000)</strong> - WebP y SVG (formatos modernos y eficientes)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box orange">🟠</div>
+                <span><strong>Naranja (#FF7518)</strong> - JPG y PNG (formatos tradicionales)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box black">⚫</div>
+                <span><strong>Negro (#000000)</strong> - Otros formatos (GIF, BMP, ICO, TIFF)</span>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3>💡 Información sobre los formatos</h3>
+            <p><strong>WebP & SVG (Verde)</strong>: Formatos modernos optimizados para web. WebP ofrece mejor compresión que JPG/PNG, y SVG es escalable sin pérdida de calidad.</p>
+            <p><strong>JPG & PNG (Naranja)</strong>: Formatos tradicionales ampliamente soportados. JPG para fotografías, PNG para imágenes con transparencia.</p>
+            <p><strong>Otros (Negro)</strong>: Formatos menos comunes o legacy que podrían beneficiarse de conversión a formatos modernos.</p>
+        </div>
+        
+        <div class="test-section">
+            <h2>🟢 Formatos modernos (Verde)</h2>
+            <div class="image-grid">
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/200x150/4caf50/ffffff?text=WebP+Image.webp" alt="WebP Test">
+                    <div class="image-caption">WebP - Formato moderno</div>
+                    <div class="expected-color">Esperado: Borde verde</div>
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/200x150/8bc34a/ffffff?text=SVG+Image.svg" alt="SVG Test">
+                    <div class="image-caption">SVG - Vectorial escalable</div>
+                    <div class="expected-color">Esperado: Borde verde</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🟠 Formatos tradicionales (Naranja)</h2>
+            <div class="image-grid">
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/200x150/ff9800/ffffff?text=JPG+Image.jpg" alt="JPG Test">
+                    <div class="image-caption">JPG - Compresión con pérdida</div>
+                    <div class="expected-color">Esperado: Borde naranja</div>
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/200x150/ff5722/ffffff?text=PNG+Image.png" alt="PNG Test">
+                    <div class="image-caption">PNG - Sin pérdida + transparencia</div>
+                    <div class="expected-color">Esperado: Borde naranja</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>⚫ Otros formatos (Negro)</h2>
+            <div class="image-grid">
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/200x150/9c27b0/ffffff?text=GIF+Image.gif" alt="GIF Test">
+                    <div class="image-caption">GIF - Animaciones</div>
+                    <div class="expected-color">Esperado: Borde negro</div>
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/200x150/607d8b/ffffff?text=BMP+Image.bmp" alt="BMP Test">
+                    <div class="image-caption">BMP - Sin compresión</div>
+                    <div class="expected-color">Esperado: Borde negro</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔍 Casos especiales</h2>
+            <div class="image-grid">
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/200x150/795548/ffffff?text=No+Extension" alt="No Extension">
+                    <div class="image-caption">Sin extensión</div>
+                    <div class="expected-color">Esperado: Borde negro (Unknown)</div>
+                </div>
+                <div class="image-item">
+                    <img src="https://via.placeholder.com/200x150/ff5722/ffffff?text=PNG+with+params.png?width=300" alt="PNG with params">
+                    <div class="image-caption">PNG con parámetros</div>
+                    <div class="expected-color">Esperado: Borde naranja</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3>🎯 Beneficios del sistema de colores</h3>
+            <p><strong>Análisis rápido</strong>: Identifica visualmente qué formatos usa un sitio web</p>
+            <p><strong>Optimización</strong>: Detecta oportunidades para convertir a formatos modernos</p>
+            <p><strong>Educativo</strong>: Aprende sobre diferentes formatos de imagen</p>
+            <p><strong>Profesional</strong>: Útil para auditorías de rendimiento web</p>
+        </div>
+    </div>
+</body>
+</html> 

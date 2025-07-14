@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h1>Generando iconos...</h1>
+    <div id="output"></div>
+    
+    <script>
+        const svgContent = `<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo del icono -->
+  <rect width="128" height="128" fill="#4285f4" rx="16"/>
+  
+  <!-- Imagen principal -->
+  <rect x="24" y="24" width="80" height="60" fill="white" stroke="#333" stroke-width="2"/>
+  
+  <!-- Elementos de la imagen -->
+  <rect x="32" y="32" width="20" height="15" fill="#ff6b6b"/>
+  <rect x="56" y="32" width="20" height="15" fill="#4ecdc4"/>
+  <rect x="80" y="32" width="20" height="15" fill="#45b7d1"/>
+  <rect x="32" y="52" width="20" height="15" fill="#96ceb4"/>
+  <rect x="56" y="52" width="20" height="15" fill="#feca57"/>
+  <rect x="80" y="52" width="20" height="15" fill="#ff9ff3"/>
+  
+  <!-- Borde de detección -->
+  <rect x="20" y="20" width="88" height="68" fill="none" stroke="black" stroke-width="4" stroke-dasharray="4,4"/>
+  
+  <!-- Etiqueta de formato -->
+  <rect x="24" y="16" width="30" height="16" fill="black" rx="3"/>
+  <text x="39" y="27" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold" text-anchor="middle">PNG</text>
+  
+  <!-- Iconos de formato -->
+  <circle cx="100" cy="40" r="8" fill="#ff4757"/>
+  <text x="100" y="44" fill="white" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle">J</text>
+  
+  <circle cx="110" cy="60" r="8" fill="#2ed573"/>
+  <text x="110" y="64" fill="white" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle">S</text>
+  
+  <circle cx="100" cy="80" r="8" fill="#ffa502"/>
+  <text x="100" y="84" fill="white" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle">G</text>
+</svg>`;
+
+        const sizes = [16, 48, 128];
+        
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, size, size);
+                
+                // Crear enlace de descarga
+                const link = document.createElement('a');
+                link.download = `icon${size}.png`;
+                link.href = canvas.toDataURL();
+                link.textContent = `Descargar icon${size}.png`;
+                link.style.display = 'block';
+                link.style.margin = '10px';
+                
+                document.getElementById('output').appendChild(link);
+            };
+            
+            const svgBlob = new Blob([svgContent], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(svgBlob);
+            img.src = url;
+        });
+    </script>
+</body>
+</html> 
