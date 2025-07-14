@@ -219,6 +219,82 @@ async function createImageBorder(img, format) {
   container.appendChild(formatLabel);
 }
 
+// Función para extraer la URL de un background-image
+function extractBackgroundImageUrl(style) {
+  const match = style.match(/url\(["']?(.*?)["']?\)/);
+  return match ? match[1] : null;
+}
+
+// Función para procesar imágenes de fondo
+async function processBackgroundImages() {
+  const allElements = document.querySelectorAll('*');
+  for (const el of allElements) {
+    if (el.hasAttribute('data-bg-image-detected')) continue;
+    const style = window.getComputedStyle(el);
+    const bg = style.getPropertyValue('background-image');
+    if (bg && bg !== 'none') {
+      const url = extractBackgroundImageUrl(bg);
+      if (url) {
+        // Detectar formato
+        const format = detectImageFormat({ src: url });
+        // Crear label y borde igual que para <img>
+        await createBackgroundImageBorder(el, url, format);
+        el.setAttribute('data-bg-image-detected', 'true');
+      }
+    }
+  }
+}
+
+// Función para crear borde y label en imágenes de fondo
+async function createBackgroundImageBorder(el, url, format) {
+  // Evitar duplicados
+  if (el.querySelector('.bg-image-label')) return;
+  const borderColor = getBorderColor(format);
+  el.style.outline = `5px solid ${borderColor}`;
+  el.style.outlineOffset = '-2px';
+  // Crear label flotante
+  const label = document.createElement('div');
+  label.className = 'bg-image-label';
+  label.style.cssText = `
+    position: absolute;
+    top: 2px;
+    left: 8px;
+    background: ${borderColor};
+    color: white;
+    padding: 1px 8px 1px 8px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 3px;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  `;
+  label.textContent = format;
+  // Obtener el peso
+  const sizeKB = await getImageSizeInKB({ src: url });
+  if (sizeKB !== null) {
+    const sizeLabel = document.createElement('span');
+    sizeLabel.textContent = `${sizeKB} KB`;
+    sizeLabel.style.cssText = `
+      font-size: 10px;
+      font-weight: normal;
+      color: #fff;
+      opacity: 0.85;
+      margin-top: 1px;
+    `;
+    label.appendChild(sizeLabel);
+  }
+  // Crear contenedor relativo si es necesario
+  if (window.getComputedStyle(el).position === 'static') {
+    el.style.position = 'relative';
+  }
+  el.appendChild(label);
+}
+
 // Función principal para procesar todas las imágenes
 function processImages() {
   const images = document.querySelectorAll('img');
@@ -250,29 +326,42 @@ function activateExtension() {
   
   // Procesar imágenes existentes
   processImages();
+  processBackgroundImages(); // Procesar imágenes de fondo existentes
   
   // Iniciar el observador para nuevas imágenes
-  observer = new MutationObserver((mutations) => {
-    if (!isActive) return; // No procesar si está desactivada
-    
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
+  observer = new MutationObserver(async (mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
         if (node.nodeType === Node.ELEMENT_NODE) {
           // Buscar imágenes en el nodo añadido
           const images = node.querySelectorAll ? node.querySelectorAll('img') : [];
           if (node.tagName === 'IMG') {
             images.push(node);
           }
-          
-          images.forEach(async img => {
+          for (const img of images) {
             if (!img.hasAttribute('data-format-detected')) {
               const format = detectImageFormat(img);
               await createImageBorder(img, format);
             }
-          });
+          }
+          // Buscar imágenes de fondo en el nodo añadido
+          const backgroundImages = node.querySelectorAll ? node.querySelectorAll('*') : [];
+          for (const el of backgroundImages) {
+            if (el.hasAttribute('data-bg-image-detected')) continue;
+            const style = window.getComputedStyle(el);
+            const bg = style.getPropertyValue('background-image');
+            if (bg && bg !== 'none') {
+              const url = extractBackgroundImageUrl(bg);
+              if (url) {
+                const format = detectImageFormat({ src: url });
+                await createBackgroundImageBorder(el, url, format);
+                el.setAttribute('data-bg-image-detected', 'true');
+              }
+            }
+          }
         }
-      });
-    });
+      }
+    }
   });
   
   // Iniciar el observador
@@ -306,6 +395,16 @@ function deactivateExtension() {
       container.parentNode.insertBefore(img, container);
       // Remover el contenedor del borde
       container.remove();
+    }
+  });
+
+  // Remover todos los bordes de fondo existentes
+  document.querySelectorAll('.bg-image-label').forEach(label => {
+    const el = label.parentElement;
+    if (el) {
+      el.style.outline = 'none'; // Remover el borde
+      el.style.outlineOffset = '0';
+      label.remove(); // Remover el label
     }
   });
 }
