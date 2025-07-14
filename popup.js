@@ -40,38 +40,21 @@ function updateUI() {
   }
 }
 
-// Función para obtener estadísticas y lista de imágenes en la página actual
+// Sobrescribir getImageStatsAndList para usar window.reportImagesForPopup
 function getImageStatsAndList() {
   return new Promise((resolve) => {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       chrome.scripting.executeScript({
         target: {tabId: tabs[0].id},
-        function: () => {
-          const images = document.querySelectorAll('img[data-format-detected]');
+        func: () => {
+          const images = window.reportImagesForPopup ? window.reportImagesForPopup() : [];
           const formatCounts = {};
           let total = 0;
-          const imageList = [];
           images.forEach(img => {
-            const label = img.closest('.img-border-container')?.querySelector('div[style*="position: absolute"]');
-            if (label) {
-              const format = label.childNodes[0]?.textContent || label.textContent;
-              let size = null;
-              // Buscar el span del peso
-              const sizeSpan = label.querySelector('span');
-              if (sizeSpan) {
-                const match = sizeSpan.textContent.match(/(\d+) KB/);
-                if (match) size = parseInt(match[1], 10);
-              }
-              formatCounts[format] = (formatCounts[format] || 0) + 1;
-              total++;
-              imageList.push({
-                url: img.src,
-                format: format,
-                size: size
-              });
-            }
+            formatCounts[img.format] = (formatCounts[img.format] || 0) + 1;
+            total++;
           });
-          return { total, formatCounts, imageList };
+          return { total, formatCounts, imageList: images };
         }
       }, (results) => {
         if (results && results[0] && results[0].result) {
@@ -101,15 +84,57 @@ function getFormatColor(format) {
   return colorMap[format] || '#000000';
 }
 
+// Guardar los últimos datos para el reporte
+let lastStats = null;
+
+// Función para descargar el reporte como CSV
+function downloadReportCSV() {
+  if (!lastStats) return;
+  let csv = '';
+  // Estadísticas
+  csv += 'Estadísticas por formato:\n';
+  Object.entries(lastStats.formatCounts).forEach(([format, count]) => {
+    csv += `${format},${count}\n`;
+  });
+  csv += '\nListado de imágenes:\n';
+  csv += 'Tipo,URL,Formato,Peso (KB)\n';
+  lastStats.imageList.forEach(img => {
+    const tipo = img.type || 'img';
+    csv += `${tipo},"${img.url}",${img.format},${img.size != null ? img.size : ''}\n`;
+  });
+  // Descargar
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'reporte-imagenes.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
+
 // Función para actualizar la interfaz con las estadísticas y la tabla
 function updateStatsAndList() {
   if (!isActive) {
     document.getElementById('total-images').textContent = '0';
     document.getElementById('format-breakdown').innerHTML = '<div class="format-count"><span>Extensión desactivada</span></div>';
     document.getElementById('image-list').innerHTML = '<tr><td colspan="3">Extensión desactivada</td></tr>';
+    lastStats = null;
     return;
   }
   getImageStatsAndList().then(stats => {
+    // Detectar tipo (img o bg) para cada imagen
+    stats.imageList.forEach(img => {
+      if (img.isBackground) {
+        img.type = 'bg';
+      } else {
+        img.type = 'img';
+      }
+    });
+    lastStats = stats;
     document.getElementById('total-images').textContent = stats.total;
     const breakdown = document.getElementById('format-breakdown');
     breakdown.innerHTML = '';
@@ -173,3 +198,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 // Actualizar cada 2 segundos para mantener las estadísticas y la lista actualizadas
 setInterval(updateStatsAndList, 2000); 
+
+document.getElementById('download-report-btn').addEventListener('click', downloadReportCSV); 

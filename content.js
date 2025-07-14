@@ -464,3 +464,42 @@ urlObserver.observe(document, {
   subtree: true,
   childList: true
 }); 
+
+// Al final del archivo, exponer la lista de imágenes para el popup
+window.reportImagesForPopup = function() {
+  const images = [];
+  // <img>
+  document.querySelectorAll('img[data-format-detected]').forEach(img => {
+    const label = img.closest('.img-border-container')?.querySelector('div[style*="position: absolute"]');
+    if (label) {
+      const format = label.childNodes[0]?.textContent || label.textContent;
+      let size = null;
+      const sizeSpan = label.querySelector('span');
+      if (sizeSpan) {
+        const match = sizeSpan.textContent.match(/(\d+) KB/);
+        if (match) size = parseInt(match[1], 10);
+      }
+      images.push({ url: img.src, format, size, isBackground: false });
+    }
+  });
+  // background-image
+  document.querySelectorAll('[data-bg-image-detected]').forEach(el => {
+    const label = el.querySelector('.bg-image-label');
+    if (label) {
+      const format = label.childNodes[0]?.textContent || label.textContent;
+      let size = null;
+      const sizeSpan = label.querySelector('span');
+      if (sizeSpan) {
+        const match = sizeSpan.textContent.match(/(\d+) KB/);
+        if (match) size = parseInt(match[1], 10);
+      }
+      const style = window.getComputedStyle(el);
+      const bg = style.getPropertyValue('background-image');
+      const url = extractBackgroundImageUrl(bg);
+      if (url) {
+        images.push({ url, format, size, isBackground: true });
+      }
+    }
+  });
+  return images;
+}; 
