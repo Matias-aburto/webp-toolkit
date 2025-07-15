@@ -1,6 +1,56 @@
 // Variables globales
 let isActive = false;
 
+// Función para convertir imagen a WebP
+async function convertToWebP(imageUrl, quality = 80) {
+    try {
+        // Obtener la imagen como blob
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+            throw new Error(`Error al obtener la imagen: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        
+        // Crear FormData con la imagen
+        const formData = new FormData();
+        formData.append('image', blob, 'image.jpg');
+        formData.append('quality', quality);
+
+        // Hacer petición POST al endpoint
+        const convertResponse = await fetch('http://45.63.9.4/convert', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!convertResponse.ok) {
+            throw new Error(`Error en conversión: ${convertResponse.status} - ${await convertResponse.text()}`);
+        }
+
+        // Obtener el archivo WebP como blob
+        const webpBlob = await convertResponse.blob();
+        
+        // Crear URL para descarga
+        const url = URL.createObjectURL(webpBlob);
+        
+        // Descargar automáticamente
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `converted_${Date.now()}.webp`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Limpiar URL
+        URL.revokeObjectURL(url);
+        
+        return true;
+    } catch (error) {
+        console.error('Error en conversión:', error);
+        throw error;
+    }
+}
+
 // Función para obtener el estado de la extensión
 function getExtensionStatus() {
   return new Promise((resolve) => {
@@ -122,7 +172,7 @@ function updateStatsAndList() {
   if (!isActive) {
     document.getElementById('total-images').textContent = '0';
     document.getElementById('format-breakdown').innerHTML = '<div class="format-count"><span>Extensión desactivada</span></div>';
-    document.getElementById('image-list').innerHTML = '<tr><td colspan="3">Extensión desactivada</td></tr>';
+    document.getElementById('image-list').innerHTML = '<tr><td colspan="4">Extensión desactivada</td></tr>';
     lastStats = null;
     return;
   }
@@ -163,7 +213,7 @@ function updateStatsAndList() {
     const imageListTbody = document.getElementById('image-list');
     imageListTbody.innerHTML = '';
     if (uniqueList.length === 0) {
-      imageListTbody.innerHTML = '<tr><td colspan="3">No se han detectado imágenes</td></tr>';
+      imageListTbody.innerHTML = '<tr><td colspan="4">No se han detectado imágenes</td></tr>';
     } else {
       // Ordenar por peso de mayor a menor (nulls al final)
       uniqueList.sort((a, b) => {
@@ -187,9 +237,43 @@ function updateStatsAndList() {
         // Peso
         const tdSize = document.createElement('td');
         tdSize.textContent = img.size != null ? img.size : '-';
+        // Botón de conversión
+        const tdActions = document.createElement('td');
+        const convertBtn = document.createElement('button');
+        convertBtn.className = 'convert-webp-btn';
+        convertBtn.textContent = 'Convertir a WebP';
+        convertBtn.onclick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Deshabilitar botón y mostrar estado de carga
+          convertBtn.disabled = true;
+          convertBtn.classList.add('loading');
+          convertBtn.textContent = 'Convirtiendo...';
+          
+          try {
+            await convertToWebP(img.url, 80);
+            convertBtn.textContent = '✅ Convertido';
+            setTimeout(() => {
+              convertBtn.textContent = 'Convertir a WebP';
+              convertBtn.disabled = false;
+              convertBtn.classList.remove('loading');
+            }, 2000);
+          } catch (error) {
+            console.error('Error al convertir:', error);
+            convertBtn.textContent = '❌ Error';
+            setTimeout(() => {
+              convertBtn.textContent = 'Convertir a WebP';
+              convertBtn.disabled = false;
+              convertBtn.classList.remove('loading');
+            }, 3000);
+          }
+        };
+        tdActions.appendChild(convertBtn);
         tr.appendChild(tdUrl);
         tr.appendChild(tdFormat);
         tr.appendChild(tdSize);
+        tr.appendChild(tdActions);
         imageListTbody.appendChild(tr);
       });
     }

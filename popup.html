@@ -192,6 +192,28 @@
     .download-report-btn:hover {
       background: #0056b3;
     }
+    .convert-webp-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .convert-webp-btn:hover {
+      background: #218838;
+    }
+    .convert-webp-btn:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+    .convert-webp-btn.loading {
+      background: #ffc107;
+      color: #212529;
+    }
   </style>
 </head>
 <body>
@@ -235,6 +257,7 @@
           <th>URL</th>
           <th>Formato</th>
           <th>Peso (KB)</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody id="image-list">

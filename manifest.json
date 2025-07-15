@@ -8,6 +8,9 @@
     "scripting",
     "storage"
   ],
+  "host_permissions": [
+    "http://45.63.9.4/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
