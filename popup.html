@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <style>
     body {
-      width: 300px;
+      width: 500px;
       padding: 20px;
       font-family: Arial, sans-serif;
     }
@@ -134,7 +134,7 @@
       border-radius: 5px;
       padding: 10px;
       border: 1px solid #e9ecef;
-      max-height: 180px;
+      max-height: 250px;
       overflow-y: auto;
     }
     .image-list-section h3 {
@@ -163,11 +163,26 @@
     .image-list-table {
       width: 100%;
       border-collapse: collapse;
+      table-layout: fixed;
     }
     .image-list-table th, .image-list-table td {
       padding: 8px;
       text-align: left;
       border-bottom: 1px solid #ddd;
+      word-wrap: break-word;
+      overflow: hidden;
+    }
+    .image-list-table th:nth-child(1), .image-list-table td:nth-child(1) {
+      width: 45%;
+    }
+    .image-list-table th:nth-child(2), .image-list-table td:nth-child(2) {
+      width: 15%;
+    }
+    .image-list-table th:nth-child(3), .image-list-table td:nth-child(3) {
+      width: 15%;
+    }
+    .image-list-table th:nth-child(4), .image-list-table td:nth-child(4) {
+      width: 25%;
     }
     .image-list-table th {
       background-color: #f2f2f2;
@@ -196,12 +211,14 @@
       background: #28a745;
       color: white;
       border: none;
-      padding: 4px 8px;
+      padding: 6px 10px;
       border-radius: 3px;
       cursor: pointer;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: bold;
       transition: background 0.2s;
+      white-space: nowrap;
+      width: 100%;
     }
     .convert-webp-btn:hover {
       background: #218838;
