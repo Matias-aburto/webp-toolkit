@@ -164,6 +164,7 @@ async function createImageBorder(img, format) {
 
   // Crear el label flotante
   const formatLabel = document.createElement('div');
+  formatLabel.className = 'img-format-label';
   formatLabel.style.cssText = `
     position: absolute;
     top: 2px;
@@ -199,24 +200,14 @@ async function createImageBorder(img, format) {
     formatLabel.appendChild(sizeLabel);
   }
 
-  // Crear un contenedor relativo solo si no existe
-  let container = img.parentElement;
-  let needsContainer = true;
-  if (container && container.classList.contains('img-border-container')) {
-    needsContainer = false;
-  }
-  if (needsContainer) {
-    const wrapper = document.createElement('span');
-    wrapper.style.position = 'relative';
-    wrapper.style.display = 'inline-block';
-    wrapper.className = 'img-border-container';
-    img.parentNode.insertBefore(wrapper, img);
-    wrapper.appendChild(img);
-    container = wrapper;
+  // Asegurar que el contenedor padre tenga posición relativa
+  const parent = img.parentElement;
+  if (window.getComputedStyle(parent).position === 'static') {
+    parent.style.position = 'relative';
   }
 
-  // Insertar el label
-  container.appendChild(formatLabel);
+  // Insertar el label en el contenedor padre
+  parent.appendChild(formatLabel);
 }
 
 // Función para extraer la URL de un background-image
@@ -296,21 +287,24 @@ async function createBackgroundImageBorder(el, url, format) {
 }
 
 // Función principal para procesar todas las imágenes
-function processImages() {
+async function processImages() {
   const images = document.querySelectorAll('img');
   
-  images.forEach(async img => {
+  for (const img of images) {
     // Esperar a que la imagen se cargue si no está cargada
     if (img.complete) {
       const format = detectImageFormat(img);
       await createImageBorder(img, format);
     } else {
-      img.addEventListener('load', async () => {
-        const format = detectImageFormat(img);
-        await createImageBorder(img, format);
+      await new Promise((resolve) => {
+        img.addEventListener('load', async () => {
+          const format = detectImageFormat(img);
+          await createImageBorder(img, format);
+          resolve();
+        });
       });
     }
-  });
+  }
 }
 
 // Variables globales para el estado de la extensión
@@ -318,15 +312,15 @@ let isActive = false;
 let observer = null;
 
 // Función para activar la extensión
-function activateExtension() {
+async function activateExtension() {
   if (isActive) return; // Ya está activa
   
   isActive = true;
   console.log('🟢 Image Format Detector activado');
   
   // Procesar imágenes existentes
-  processImages();
-  processBackgroundImages(); // Procesar imágenes de fondo existentes
+  await processImages();
+  await processBackgroundImages(); // Procesar imágenes de fondo existentes
   
   // Iniciar el observador para nuevas imágenes
   observer = new MutationObserver(async (mutations) => {
@@ -367,7 +361,9 @@ function activateExtension() {
   // Iniciar el observador
   observer.observe(document.body, {
     childList: true,
-    subtree: true
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['src', 'data-src', 'style', 'background-image']
   });
 }
 
@@ -384,27 +380,33 @@ function deactivateExtension() {
     observer = null;
   }
   
-  // Remover todos los bordes existentes (todos los colores)
-  const borderContainers = document.querySelectorAll('div[style*="border: 5px solid"]');
-  borderContainers.forEach(container => {
-    const img = container.querySelector('img');
-    if (img) {
-      // Remover el atributo de detección
-      img.removeAttribute('data-format-detected');
-      // Mover la imagen de vuelta a su posición original
-      container.parentNode.insertBefore(img, container);
-      // Remover el contenedor del borde
-      container.remove();
+  // Remover todos los bordes y etiquetas de imágenes existentes
+  document.querySelectorAll('img[data-format-detected]').forEach(img => {
+    // Remover el outline (borde)
+    img.style.outline = 'none';
+    img.style.outlineOffset = '0';
+    // Remover el atributo de detección
+    img.removeAttribute('data-format-detected');
+    
+    // Remover la etiqueta de formato si existe
+    const label = img.parentElement?.querySelector('.img-format-label');
+    if (label) {
+      label.remove();
     }
   });
 
-  // Remover todos los bordes de fondo existentes
-  document.querySelectorAll('.bg-image-label').forEach(label => {
-    const el = label.parentElement;
-    if (el) {
-      el.style.outline = 'none'; // Remover el borde
-      el.style.outlineOffset = '0';
-      label.remove(); // Remover el label
+  // Remover todos los bordes y etiquetas de imágenes de fondo existentes
+  document.querySelectorAll('[data-bg-image-detected]').forEach(el => {
+    // Remover el outline (borde)
+    el.style.outline = 'none';
+    el.style.outlineOffset = '0';
+    // Remover el atributo de detección
+    el.removeAttribute('data-bg-image-detected');
+    
+    // Remover la etiqueta de formato si existe
+    const label = el.querySelector('.bg-image-label');
+    if (label) {
+      label.remove();
     }
   });
 }
@@ -412,7 +414,7 @@ function deactivateExtension() {
 // Escuchar mensajes del background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'activate') {
-    activateExtension();
+    activateExtension().catch(console.error);
   } else if (request.action === 'deactivate') {
     deactivateExtension();
   }
@@ -423,9 +425,9 @@ chrome.storage.local.get(['isActive'], (result) => {
   if (result.isActive) {
     // Si estaba activa, activar después de que el DOM esté listo
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', activateExtension);
+      document.addEventListener('DOMContentLoaded', () => activateExtension().catch(console.error));
     } else {
-      activateExtension();
+      activateExtension().catch(console.error);
     }
   }
 });
@@ -434,7 +436,7 @@ chrome.storage.local.get(['isActive'], (result) => {
 window.addEventListener('load', () => {
   chrome.storage.local.get(['isActive'], (result) => {
     if (result.isActive && !isActive) {
-      activateExtension();
+      activateExtension().catch(console.error);
     }
   });
 });
@@ -468,31 +470,42 @@ urlObserver.observe(document, {
 // Al final del archivo, exponer la lista de imágenes para el popup
 window.reportImagesForPopup = function() {
   const images = [];
+  
   // <img>
   document.querySelectorAll('img[data-format-detected]').forEach(img => {
-    const label = img.closest('.img-border-container')?.querySelector('div[style*="position: absolute"]');
+    // Buscar la etiqueta en el contenedor padre
+    const label = img.parentElement?.querySelector('.img-format-label');
     if (label) {
-      const format = label.childNodes[0]?.textContent || label.textContent;
+      // Obtener el formato del primer nodo de texto (sin el span del tamaño)
+      const formatText = label.childNodes[0]?.textContent || label.textContent;
+      const format = formatText.trim();
+      
       let size = null;
       const sizeSpan = label.querySelector('span');
       if (sizeSpan) {
         const match = sizeSpan.textContent.match(/(\d+) KB/);
         if (match) size = parseInt(match[1], 10);
       }
+      
       images.push({ url: img.src, format, size, isBackground: false });
     }
   });
+  
   // background-image
   document.querySelectorAll('[data-bg-image-detected]').forEach(el => {
     const label = el.querySelector('.bg-image-label');
     if (label) {
-      const format = label.childNodes[0]?.textContent || label.textContent;
+      // Obtener el formato del primer nodo de texto (sin el span del tamaño)
+      const formatText = label.childNodes[0]?.textContent || label.textContent;
+      const format = formatText.trim();
+      
       let size = null;
       const sizeSpan = label.querySelector('span');
       if (sizeSpan) {
         const match = sizeSpan.textContent.match(/(\d+) KB/);
         if (match) size = parseInt(match[1], 10);
       }
+      
       const style = window.getComputedStyle(el);
       const bg = style.getPropertyValue('background-image');
       const url = extractBackgroundImageUrl(bg);
@@ -501,5 +514,6 @@ window.reportImagesForPopup = function() {
       }
     }
   });
+  
   return images;
 }; 
