@@ -4,6 +4,11 @@ let isActive = false;
 // Función para convertir imagen a WebP
 async function convertToWebP(imageUrl, quality = 80) {
     try {
+        // Extraer el nombre del archivo de la URL
+        const urlParts = imageUrl.split('/');
+        const originalFileName = urlParts[urlParts.length - 1].split('?')[0]; // Remover query parameters
+        const fileNameWithoutExt = originalFileName.split('.')[0]; // Remover extensión
+        
         // Obtener la imagen como blob
         const response = await fetch(imageUrl);
         if (!response.ok) {
@@ -12,9 +17,9 @@ async function convertToWebP(imageUrl, quality = 80) {
         
         const blob = await response.blob();
         
-        // Crear FormData con la imagen
+        // Crear FormData con la imagen usando el nombre original
         const formData = new FormData();
-        formData.append('image', blob, 'image.jpg');
+        formData.append('image', blob, originalFileName);
         formData.append('quality', quality);
 
         // Hacer petición POST al endpoint
@@ -33,10 +38,10 @@ async function convertToWebP(imageUrl, quality = 80) {
         // Crear URL para descarga
         const url = URL.createObjectURL(webpBlob);
         
-        // Descargar automáticamente
+        // Descargar automáticamente con el nombre original + _converted.webp
         const a = document.createElement('a');
         a.href = url;
-        a.download = `converted_${Date.now()}.webp`;
+        a.download = `${fileNameWithoutExt}_converted.webp`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -237,39 +242,49 @@ function updateStatsAndList() {
         // Peso
         const tdSize = document.createElement('td');
         tdSize.textContent = img.size != null ? img.size : '-';
-        // Botón de conversión
+        // Botón de conversión (solo si no es WebP)
         const tdActions = document.createElement('td');
-        const convertBtn = document.createElement('button');
-        convertBtn.className = 'convert-webp-btn';
-        convertBtn.textContent = 'Convertir a WebP';
-        convertBtn.onclick = async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Deshabilitar botón y mostrar estado de carga
-          convertBtn.disabled = true;
-          convertBtn.classList.add('loading');
-          convertBtn.textContent = 'Convirtiendo...';
-          
-          try {
-            await convertToWebP(img.url, 80);
-            convertBtn.textContent = '✅ Convertido';
-            setTimeout(() => {
-              convertBtn.textContent = 'Convertir a WebP';
-              convertBtn.disabled = false;
-              convertBtn.classList.remove('loading');
-            }, 2000);
-          } catch (error) {
-            console.error('Error al convertir:', error);
-            convertBtn.textContent = '❌ Error';
-            setTimeout(() => {
-              convertBtn.textContent = 'Convertir a WebP';
-              convertBtn.disabled = false;
-              convertBtn.classList.remove('loading');
-            }, 3000);
-          }
-        };
-        tdActions.appendChild(convertBtn);
+        if (img.format !== 'WebP') {
+          const convertBtn = document.createElement('button');
+          convertBtn.className = 'convert-webp-btn';
+          convertBtn.textContent = 'Convertir a WebP';
+          convertBtn.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Deshabilitar botón y mostrar estado de carga
+            convertBtn.disabled = true;
+            convertBtn.classList.add('loading');
+            convertBtn.textContent = 'Convirtiendo...';
+            
+            try {
+              await convertToWebP(img.url, 80);
+              convertBtn.textContent = '✅ Convertido';
+              setTimeout(() => {
+                convertBtn.textContent = 'Convertir a WebP';
+                convertBtn.disabled = false;
+                convertBtn.classList.remove('loading');
+              }, 2000);
+            } catch (error) {
+              console.error('Error al convertir:', error);
+              convertBtn.textContent = '❌ Error';
+              setTimeout(() => {
+                convertBtn.textContent = 'Convertir a WebP';
+                convertBtn.disabled = false;
+                convertBtn.classList.remove('loading');
+              }, 3000);
+            }
+          };
+          tdActions.appendChild(convertBtn);
+        } else {
+          // Si ya es WebP, mostrar un mensaje informativo
+          const webpInfo = document.createElement('span');
+          webpInfo.textContent = 'Ya es WebP';
+          webpInfo.style.color = '#28a745';
+          webpInfo.style.fontSize = '11px';
+          webpInfo.style.fontWeight = 'bold';
+          tdActions.appendChild(webpInfo);
+        }
         tr.appendChild(tdUrl);
         tr.appendChild(tdFormat);
         tr.appendChild(tdSize);
