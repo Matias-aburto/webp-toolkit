@@ -280,36 +280,39 @@ async function processBackgroundImages() {
 
 // Función para crear borde y label en imágenes de fondo
 async function createBackgroundImageBorder(el, url, format) {
-  // Evitar duplicados
-  if (el.querySelector('.bg-image-label')) return;
-  const borderColor = getBorderColor(format);
-  el.style.outline = `5px solid ${borderColor}`;
-  el.style.outlineOffset = '-2px';
-  // Crear label flotante
-  const label = document.createElement('div');
-  label.className = 'bg-image-label';
-  label.style.cssText = `
-    position: absolute;
-    top: 2px;
-    left: 8px;
-    background: ${borderColor};
-    color: white;
-    padding: 1px 8px 1px 8px;
-    font-size: 13px;
-    font-weight: bold;
-    border-radius: 3px;
-    z-index: 1000;
-    pointer-events: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    line-height: 1.2;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  `;
+  // Buscar si ya existe el label
+  let label = el.querySelector('.bg-image-label');
+  if (!label) {
+    // Crear label flotante si no existe
+    label = document.createElement('div');
+    label.className = 'bg-image-label';
+    label.style.cssText = `
+      position: absolute;
+      top: 2px;
+      left: 8px;
+      background: ${getBorderColor(format)};
+      color: white;
+      padding: 1px 8px 1px 8px;
+      font-size: 13px;
+      font-weight: bold;
+      border-radius: 3px;
+      z-index: 1000;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      line-height: 1.2;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    `;
+    el.appendChild(label);
+  }
+  // Actualizar formato
   label.textContent = format;
   // Obtener el peso
   const sizeKB = await getImageSizeInKB({ src: url });
   if (sizeKB !== null) {
+    // Quitar spans previos de tamaño
+    label.querySelectorAll('span').forEach(s => s.remove());
     const sizeLabel = document.createElement('span');
     sizeLabel.textContent = `${sizeKB} KB`;
     sizeLabel.style.cssText = `
@@ -325,26 +328,45 @@ async function createBackgroundImageBorder(el, url, format) {
   if (window.getComputedStyle(el).position === 'static') {
     el.style.position = 'relative';
   }
-  el.appendChild(label);
+  // Aplicar el borde
+  const borderColor = getBorderColor(format);
+  el.style.outline = `5px solid ${borderColor}`;
+  el.style.outlineOffset = '-2px';
+}
+
+// Helper para saber si un src es válido de imagen
+function isValidImageSrc(src) {
+  return src && /\.(webp|png|jpg|jpeg|gif|svg|bmp|ico|tiff|tif)(\?|$)/i.test(src);
 }
 
 // Función principal para procesar todas las imágenes
 async function processImages() {
   const images = document.querySelectorAll('img');
-  
   for (const img of images) {
-    // Esperar a que la imagen se cargue si no está cargada
-    if (img.complete) {
-      const format = detectImageFormat(img);
-      await createImageBorder(img, format);
-    } else {
-      await new Promise((resolve) => {
-        img.addEventListener('load', async () => {
+    // Si el src cambia, quitar data-format-detected para forzar reprocesado
+    if (!img._formatDetectorSrcObserver) {
+      const observer = new MutationObserver(() => {
+        if (img.hasAttribute('data-format-detected')) {
+          img.removeAttribute('data-format-detected');
+        }
+      });
+      observer.observe(img, { attributes: true, attributeFilter: ['src', 'srcset', 'data-src'] });
+      img._formatDetectorSrcObserver = observer;
+    }
+    // Siempre escuchar el evento load para actualizar el formato y tamaño
+    if (!img._formatDetectorLoadListener) {
+      img.addEventListener('load', async () => {
+        if (isValidImageSrc(img.currentSrc || img.src)) {
           const format = detectImageFormat(img);
           await createImageBorder(img, format);
-          resolve();
-        });
+        }
       });
+      img._formatDetectorLoadListener = true;
+    }
+    // Solo marcar como detectada si está cargada y el src es válido
+    if (!img.hasAttribute('data-format-detected') && img.complete && isValidImageSrc(img.currentSrc || img.src)) {
+      const format = detectImageFormat(img);
+      await createImageBorder(img, format);
     }
   }
 }
