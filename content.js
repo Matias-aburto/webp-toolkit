@@ -216,16 +216,58 @@ function extractBackgroundImageUrl(style) {
   return match ? match[1] : null;
 }
 
+// Helper para extraer todas las URLs de imagen de fondo de un elemento (incluye pseudo-elementos y data-attributes)
+function findAllBackgroundImageUrls(el) {
+  const urls = new Set();
+
+  // 1. background-image (inline, clases, external CSS)
+  const style = window.getComputedStyle(el);
+  const bg = style.getPropertyValue('background-image');
+  if (bg && bg !== 'none') {
+    // Puede haber múltiples URLs: url(...), url(...)
+    const matches = [...bg.matchAll(/url\(["']?(.*?)["']?\)/g)];
+    for (const m of matches) {
+      if (m[1]) urls.add(m[1]);
+    }
+  }
+
+  // 2. Pseudo-elementos ::before y ::after
+  for (const pseudo of [':before', ':after']) {
+    const pseudoBg = window.getComputedStyle(el, pseudo).getPropertyValue('background-image');
+    if (pseudoBg && pseudoBg !== 'none') {
+      const matches = [...pseudoBg.matchAll(/url\(["']?(.*?)["']?\)/g)];
+      for (const m of matches) {
+        if (m[1]) urls.add(m[1]);
+      }
+    }
+  }
+
+  // 3. Data attributes (data-bg, data-background, data-image, etc)
+  for (const attr of el.attributes) {
+    if (/^data.*(bg|background|image)/i.test(attr.name) && /url\(|\.(jpg|jpeg|png|webp|svg|gif|bmp|ico|tiff|tif)(\?|$)/i.test(attr.value)) {
+      // Si es url(...) extraer, si es URL directa, usarla
+      const matches = [...attr.value.matchAll(/url\(["']?(.*?)["']?\)/g)];
+      if (matches.length) {
+        for (const m of matches) {
+          if (m[1]) urls.add(m[1]);
+        }
+      } else {
+        urls.add(attr.value);
+      }
+    }
+  }
+
+  return Array.from(urls);
+}
+
 // Función para procesar imágenes de fondo
 async function processBackgroundImages() {
   const allElements = document.querySelectorAll('*');
   for (const el of allElements) {
     if (el.hasAttribute('data-bg-image-detected')) continue;
-    const style = window.getComputedStyle(el);
-    const bg = style.getPropertyValue('background-image');
-    if (bg && bg !== 'none') {
-      const url = extractBackgroundImageUrl(bg);
-      if (url) {
+    const urls = findAllBackgroundImageUrls(el);
+    if (urls.length > 0) {
+      for (const url of urls) {
         // Detectar formato
         const format = detectImageFormat({ src: url });
         // Crear label y borde igual que para <img>
@@ -310,6 +352,7 @@ async function processImages() {
 // Variables globales para el estado de la extensión
 let isActive = false;
 let observer = null;
+let bgImageInterval = null; // <--- Nuevo: para el setInterval
 
 // Función para activar la extensión
 async function activateExtension() {
@@ -342,11 +385,9 @@ async function activateExtension() {
           const backgroundImages = node.querySelectorAll ? node.querySelectorAll('*') : [];
           for (const el of backgroundImages) {
             if (el.hasAttribute('data-bg-image-detected')) continue;
-            const style = window.getComputedStyle(el);
-            const bg = style.getPropertyValue('background-image');
-            if (bg && bg !== 'none') {
-              const url = extractBackgroundImageUrl(bg);
-              if (url) {
+            const urls = findAllBackgroundImageUrls(el);
+            if (urls.length > 0) {
+              for (const url of urls) {
                 const format = detectImageFormat({ src: url });
                 await createBackgroundImageBorder(el, url, format);
                 el.setAttribute('data-bg-image-detected', 'true');
@@ -365,6 +406,12 @@ async function activateExtension() {
     attributes: true,
     attributeFilter: ['src', 'data-src', 'style', 'background-image']
   });
+  // Nuevo: Intervalo para re-escanear imágenes de fondo
+  if (!bgImageInterval) {
+    bgImageInterval = setInterval(() => {
+      if (isActive) processBackgroundImages();
+    }, 1000);
+  }
 }
 
 // Función para desactivar la extensión
@@ -379,7 +426,11 @@ function deactivateExtension() {
     observer.disconnect();
     observer = null;
   }
-  
+  // Detener el intervalo de re-scan
+  if (bgImageInterval) {
+    clearInterval(bgImageInterval);
+    bgImageInterval = null;
+  }
   // Remover todos los bordes y etiquetas de imágenes existentes
   document.querySelectorAll('img[data-format-detected]').forEach(img => {
     // Remover el outline (borde)
