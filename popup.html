@@ -385,12 +385,39 @@
   
   <!-- Pestañas -->
   <div class="tabs">
-    <button class="tab active" data-tab="analyzer">🔍 Analizar página</button>
-    <button class="tab" data-tab="converter">🔄 Convertir imágenes</button>
+    <button class="tab active" data-tab="converter">🔄 Convertir imágenes</button>
+    <button class="tab" data-tab="analyzer">🔍 Analizar página</button>
+  </div>
+  
+  <!-- Contenido de la pestaña Convertir -->
+  <div id="converter-tab" class="tab-content active">
+    <div class="converter-section">
+      <div class="converter-info">
+        Convierte imágenes locales a formato WebP para optimizar el tamaño y mejorar el rendimiento de tu sitio web.
+      </div>
+      
+      <div class="drag-drop-section">
+        <h3>📁 Convertir imágenes locales</h3>
+        <div class="drag-drop-area" id="drag-drop-area">
+          <div class="drag-drop-content">
+            <div class="drag-icon">📁</div>
+            <p>Arrastra aquí una o varias imágenes</p>
+            <p class="drag-subtitle">o haz clic para seleccionar archivos</p>
+            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+          </div>
+        </div>
+        <div class="file-list" id="file-list">
+          <!-- Se llenará dinámicamente -->
+        </div>
+        <button id="convert-all-btn" class="convert-all-btn" style="display: none;">
+          Convertir todas a WebP
+        </button>
+      </div>
+    </div>
   </div>
   
   <!-- Contenido de la pestaña Analizar -->
-  <div id="analyzer-tab" class="tab-content active">
+  <div id="analyzer-tab" class="tab-content">
     <div class="status" id="status-indicator">
       <span id="status-text">Cargando...</span>
     </div>
@@ -434,36 +461,9 @@
           <!-- Se llenará dinámicamente -->
         </tbody>
       </table>
-    </div>
-  </div>
-  
-  <!-- Contenido de la pestaña Convertir -->
-  <div id="converter-tab" class="tab-content">
-    <div class="converter-section">
-      <div class="converter-info">
-        Convierte imágenes locales a formato WebP para optimizar el tamaño y mejorar el rendimiento de tu sitio web.
-      </div>
-      
-      <div class="drag-drop-section">
-        <h3>📁 Convertir imágenes locales</h3>
-        <div class="drag-drop-area" id="drag-drop-area">
-          <div class="drag-drop-content">
-            <div class="drag-icon">📁</div>
-            <p>Arrastra aquí una o varias imágenes</p>
-            <p class="drag-subtitle">o haz clic para seleccionar archivos</p>
-            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
-          </div>
-        </div>
-        <div class="file-list" id="file-list">
-          <!-- Se llenará dinámicamente -->
-        </div>
-        <button id="convert-all-btn" class="convert-all-btn" style="display: none;">
-          Convertir todas a WebP
-        </button>
-      </div>
-    </div>
-  </div>
-  
-  <script src="popup.js"></script>
-</body>
+         </div>
+   </div>
+   
+   <script src="popup.js"></script>
+ </body>
 </html> 
