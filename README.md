@@ -1,4 +1,4 @@
-# Image Format Detector - Extensión de Chrome
+# WebP Toolkit
 
 Esta extensión de Chrome detecta automáticamente el formato de las imágenes en cualquier página web y las marca con un borde negro de 10px junto con su formato (PNG, JPG, SVG, etc.).
 

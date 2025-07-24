@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Image Format Detector",
+  "name": "WebP Toolkit",
   "version": "1.0",
   "description": "Detecta el formato de las imágenes y las marca con un borde",
   "permissions": [
