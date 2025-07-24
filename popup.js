@@ -304,8 +304,212 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('toggle-button').addEventListener('click', toggleExtension);
   // Actualizar estadísticas y lista iniciales
   updateStatsAndList();
+  // Configurar drag & drop
+  setupDragAndDrop();
 });
+
 // Actualizar cada 2 segundos para mantener las estadísticas y la lista actualizadas
 setInterval(updateStatsAndList, 2000); 
 
-document.getElementById('download-report-btn').addEventListener('click', downloadReportCSV); 
+document.getElementById('download-report-btn').addEventListener('click', downloadReportCSV);
+
+// ===== FUNCIONALIDAD DE DRAG & DROP PARA IMÁGENES LOCALES =====
+
+// Variables para manejar archivos locales
+let localFiles = [];
+let isConverting = false;
+
+// Función para convertir archivo local a WebP
+async function convertLocalFileToWebP(file, quality = 80) {
+    try {
+        // Crear FormData con el archivo
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('quality', quality);
+
+        // Hacer petición POST al endpoint
+        const response = await fetch('http://45.63.9.4/convert', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error en conversión: ${response.status} - ${await response.text()}`);
+        }
+
+        // Obtener el archivo WebP como blob
+        const webpBlob = await response.blob();
+        
+        // Crear URL para descarga
+        const url = URL.createObjectURL(webpBlob);
+        
+        // Extraer nombre del archivo sin extensión
+        const fileNameWithoutExt = file.name.split('.')[0];
+        
+        // Descargar automáticamente
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileNameWithoutExt}_converted.webp`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Limpiar URL
+        URL.revokeObjectURL(url);
+        
+        return true;
+    } catch (error) {
+        console.error('Error en conversión:', error);
+        throw error;
+    }
+}
+
+// Función para formatear el tamaño del archivo
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Función para agregar archivos a la lista
+function addFiles(files) {
+    Array.from(files).forEach(file => {
+        // Verificar que sea una imagen
+        if (file.type.startsWith('image/')) {
+            // Verificar que no esté ya en la lista
+            const exists = localFiles.find(f => f.name === file.name && f.size === file.size);
+            if (!exists) {
+                localFiles.push(file);
+            }
+        }
+    });
+    updateFileList();
+}
+
+// Función para actualizar la lista de archivos
+function updateFileList() {
+    const fileList = document.getElementById('file-list');
+    const convertAllBtn = document.getElementById('convert-all-btn');
+    
+    fileList.innerHTML = '';
+    
+    if (localFiles.length === 0) {
+        fileList.innerHTML = '<div style="text-align: center; color: #666; font-size: 12px; padding: 20px;">No hay archivos seleccionados</div>';
+        convertAllBtn.style.display = 'none';
+        return;
+    }
+    
+    convertAllBtn.style.display = 'block';
+    
+    localFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-list-item';
+        
+        const fileName = document.createElement('div');
+        fileName.className = 'file-name';
+        fileName.textContent = file.name;
+        
+        const fileSize = document.createElement('div');
+        fileSize.className = 'file-size';
+        fileSize.textContent = formatFileSize(file.size);
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'file-remove-btn';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Eliminar archivo';
+        removeBtn.onclick = () => {
+            localFiles.splice(index, 1);
+            updateFileList();
+        };
+        
+        fileItem.appendChild(fileName);
+        fileItem.appendChild(fileSize);
+        fileItem.appendChild(removeBtn);
+        fileList.appendChild(fileItem);
+    });
+}
+
+// Función para convertir todos los archivos
+async function convertAllFiles() {
+    if (isConverting || localFiles.length === 0) return;
+    
+    isConverting = true;
+    const convertAllBtn = document.getElementById('convert-all-btn');
+    const originalText = convertAllBtn.textContent;
+    
+    convertAllBtn.disabled = true;
+    convertAllBtn.textContent = 'Convirtiendo...';
+    
+    try {
+        for (let i = 0; i < localFiles.length; i++) {
+            const file = localFiles[i];
+            convertAllBtn.textContent = `Convirtiendo ${i + 1}/${localFiles.length}...`;
+            
+            try {
+                await convertLocalFileToWebP(file, 80);
+                console.log(`✅ Convertido: ${file.name}`);
+            } catch (error) {
+                console.error(`❌ Error al convertir ${file.name}:`, error);
+            }
+            
+            // Pequeña pausa entre conversiones
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        convertAllBtn.textContent = '✅ Todas convertidas';
+        setTimeout(() => {
+            convertAllBtn.textContent = originalText;
+            convertAllBtn.disabled = false;
+            isConverting = false;
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error en conversión masiva:', error);
+        convertAllBtn.textContent = '❌ Error';
+        setTimeout(() => {
+            convertAllBtn.textContent = originalText;
+            convertAllBtn.disabled = false;
+            isConverting = false;
+        }, 3000);
+    }
+}
+
+// Configurar drag & drop
+function setupDragAndDrop() {
+    const dragDropArea = document.getElementById('drag-drop-area');
+    const fileInput = document.getElementById('file-input');
+    const convertAllBtn = document.getElementById('convert-all-btn');
+    
+    // Click en el área para abrir selector de archivos
+    dragDropArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // Selección de archivos
+    fileInput.addEventListener('change', (e) => {
+        addFiles(e.target.files);
+        fileInput.value = ''; // Limpiar input
+    });
+    
+    // Drag & drop
+    dragDropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dragDropArea.classList.add('dragover');
+    });
+    
+    dragDropArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragDropArea.classList.remove('dragover');
+    });
+    
+    dragDropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragDropArea.classList.remove('dragover');
+        addFiles(e.dataTransfer.files);
+    });
+    
+    // Botón convertir todas
+    convertAllBtn.addEventListener('click', convertAllFiles);
+}
