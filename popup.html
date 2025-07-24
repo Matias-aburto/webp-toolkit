@@ -20,6 +20,49 @@
       font-size: 18px;
     }
     
+    /* Estilos para las pestañas */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #e9ecef;
+      margin-bottom: 20px;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 12px 20px;
+      background: #f8f9fa;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      color: #666;
+      transition: all 0.3s ease;
+      border-radius: 5px 5px 0 0;
+      margin-right: 2px;
+    }
+    
+    .tab:last-child {
+      margin-right: 0;
+    }
+    
+    .tab:hover {
+      background: #e9ecef;
+      color: #333;
+    }
+    
+    .tab.active {
+      background: #007bff;
+      color: white;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
     .status {
       background: #f0f0f0;
       padding: 10px;
@@ -74,41 +117,6 @@
       line-height: 1.4;
     }
     
-    .color-legend {
-      margin: 15px 0;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 5px;
-      border: 1px solid #e9ecef;
-    }
-    
-    .legend-item {
-      display: flex;
-      align-items: center;
-      margin: 8px 0;
-      font-size: 12px;
-    }
-    
-    .color-box {
-      width: 20px;
-      height: 20px;
-      border-radius: 3px;
-      margin-right: 10px;
-      border: 1px solid #ddd;
-    }
-    
-    .color-box.green {
-      background: #008000;
-    }
-    
-    .color-box.orange {
-      background: #FF7518;
-    }
-    
-    .color-box.black {
-      background: #000000;
-    }
-    
     .stats {
       margin-top: 15px;
       padding: 10px;
@@ -128,6 +136,7 @@
       margin: 5px 0;
       font-size: 12px;
     }
+    
     .image-list-section {
       margin-top: 20px;
       background: #f8f9fa;
@@ -137,34 +146,30 @@
       max-height: 250px;
       overflow-y: auto;
     }
+    
     .image-list-section h3 {
       margin-top: 0;
       font-size: 14px;
       color: #333;
     }
-    .image-list-item {
-      font-size: 11px;
-      color: #333;
-      margin-bottom: 7px;
-      word-break: break-all;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
+    
     .image-list-url {
       flex: 1;
       text-decoration: underline;
       color: #007bff;
       cursor: pointer;
     }
+    
     .image-list-url:hover {
       color: #0056b3;
     }
+    
     .image-list-table {
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
     }
+    
     .image-list-table th, .image-list-table td {
       padding: 8px;
       text-align: left;
@@ -172,25 +177,32 @@
       word-wrap: break-word;
       overflow: hidden;
     }
+    
     .image-list-table th:nth-child(1), .image-list-table td:nth-child(1) {
       width: 45%;
     }
+    
     .image-list-table th:nth-child(2), .image-list-table td:nth-child(2) {
       width: 15%;
     }
+    
     .image-list-table th:nth-child(3), .image-list-table td:nth-child(3) {
       width: 15%;
     }
+    
     .image-list-table th:nth-child(4), .image-list-table td:nth-child(4) {
       width: 25%;
     }
+    
     .image-list-table th {
       background-color: #f2f2f2;
       font-weight: bold;
     }
+    
     .image-list-table tbody tr:hover {
       background-color: #e9ecef;
     }
+    
     .download-report-btn {
       background: #007bff;
       color: white;
@@ -204,9 +216,11 @@
       margin-top: 5px;
       transition: background 0.2s;
     }
+    
     .download-report-btn:hover {
       background: #0056b3;
     }
+    
     .convert-webp-btn {
       background: #28a745;
       color: white;
@@ -220,16 +234,31 @@
       white-space: nowrap;
       width: 100%;
     }
+    
     .convert-webp-btn:hover {
       background: #218838;
     }
+    
     .convert-webp-btn:disabled {
       background: #6c757d;
       cursor: not-allowed;
     }
+    
     .convert-webp-btn.loading {
       background: #ffc107;
       color: #212529;
+    }
+    
+    /* Estilos para la pestaña de conversión */
+    .converter-section {
+      text-align: center;
+    }
+    
+    .converter-info {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+      margin-bottom: 20px;
     }
     
     .drag-drop-section {
@@ -282,7 +311,7 @@
       padding: 10px;
       background: #e9ecef;
       border-radius: 5px;
-      max-height: 150px;
+      max-height: 200px;
       overflow-y: auto;
     }
     
@@ -330,12 +359,12 @@
       background: #28a745;
       color: white;
       border: none;
-      padding: 8px 16px;
+      padding: 12px 24px;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: bold;
-      margin-top: 10px;
+      margin-top: 15px;
       transition: background 0.2s;
     }
     
@@ -347,81 +376,6 @@
       background: #6c757d;
       cursor: not-allowed;
     }
-    .drag-drop-section {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 5px;
-      border: 1px solid #e9ecef;
-    }
-    .drag-drop-area {
-      border: 2px dashed #ccc;
-      border-radius: 5px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.3s ease;
-    }
-    .drag-drop-area:hover {
-      border-color: #007bff;
-    }
-    .drag-drop-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .drag-icon {
-      font-size: 40px;
-      margin-bottom: 10px;
-    }
-    .drag-subtitle {
-      font-size: 12px;
-      color: #666;
-      margin-top: 5px;
-    }
-    .file-list {
-      margin-top: 15px;
-      padding: 10px;
-      background: #e9ecef;
-      border-radius: 5px;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-    .file-list-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 10px;
-      border-bottom: 1px solid #dee2e6;
-      font-size: 12px;
-      color: #333;
-    }
-    .file-list-item:last-child {
-      border-bottom: none;
-    }
-    .file-name {
-      flex: 1;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-    .file-size {
-      font-size: 10px;
-      color: #666;
-    }
-    .file-remove-btn {
-      background: none;
-      border: none;
-      color: #dc3545;
-      cursor: pointer;
-      padding: 0;
-      font-size: 16px;
-    }
-    .file-remove-btn:hover {
-      color: #c82333;
-    }
   </style>
 </head>
 <body>
@@ -429,67 +383,85 @@
     <h1>🖼️ Image Format Detector</h1>
   </div>
   
-  <div class="status" id="status-indicator">
-    <span id="status-text">Cargando...</span>
+  <!-- Pestañas -->
+  <div class="tabs">
+    <button class="tab active" data-tab="analyzer">🔍 Analizar página</button>
+    <button class="tab" data-tab="converter">🔄 Convertir imágenes</button>
   </div>
   
-  <div class="toggle-section">
-    <button id="toggle-button" class="toggle-btn">
-      <span id="toggle-text">Activar</span>
-    </button>
-  </div>
-  
-  <div class="info">
-    Esta extensión detecta automáticamente el formato de las imágenes en la página web y las marca con un borde de color junto con su formato y peso.
-  </div>
-  
-  <div class="stats">
-    <h3>📊 Estadísticas de la página</h3>
-    <div id="stats-content">
-      <div class="format-count">
-        <span>Imágenes detectadas:</span>
-        <span id="total-images">0</span>
-      </div>
-      <div id="format-breakdown">
-        <!-- Se llenará dinámicamente -->
+  <!-- Contenido de la pestaña Analizar -->
+  <div id="analyzer-tab" class="tab-content active">
+    <div class="status" id="status-indicator">
+      <span id="status-text">Cargando...</span>
+    </div>
+    
+    <div class="toggle-section">
+      <button id="toggle-button" class="toggle-btn">
+        <span id="toggle-text">Activar</span>
+      </button>
+    </div>
+    
+    <div class="info">
+      Esta extensión detecta automáticamente el formato de las imágenes en la página web y las marca con un borde de color junto con su formato y peso.
+    </div>
+    
+    <div class="stats">
+      <h3>📊 Estadísticas de la página</h3>
+      <div id="stats-content">
+        <div class="format-count">
+          <span>Imágenes detectadas:</span>
+          <span id="total-images">0</span>
+        </div>
+        <div id="format-breakdown">
+          <!-- Se llenará dinámicamente -->
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="drag-drop-section">
-    <h3>📁 Convertir imágenes locales</h3>
-    <div class="drag-drop-area" id="drag-drop-area">
-      <div class="drag-drop-content">
-        <div class="drag-icon">📁</div>
-        <p>Arrastra aquí una o varias imágenes</p>
-        <p class="drag-subtitle">o haz clic para seleccionar archivos</p>
-        <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+    <div class="image-list-section">
+      <h3>🖼️ Imágenes encontradas</h3>
+      <button id="download-report-btn" class="download-report-btn">Descargar reporte</button>
+      <table class="image-list-table">
+        <thead>
+          <tr>
+            <th>URL</th>
+            <th>Formato</th>
+            <th>Peso (KB)</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="image-list">
+          <!-- Se llenará dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Contenido de la pestaña Convertir -->
+  <div id="converter-tab" class="tab-content">
+    <div class="converter-section">
+      <div class="converter-info">
+        Convierte imágenes locales a formato WebP para optimizar el tamaño y mejorar el rendimiento de tu sitio web.
+      </div>
+      
+      <div class="drag-drop-section">
+        <h3>📁 Convertir imágenes locales</h3>
+        <div class="drag-drop-area" id="drag-drop-area">
+          <div class="drag-drop-content">
+            <div class="drag-icon">📁</div>
+            <p>Arrastra aquí una o varias imágenes</p>
+            <p class="drag-subtitle">o haz clic para seleccionar archivos</p>
+            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+          </div>
+        </div>
+        <div class="file-list" id="file-list">
+          <!-- Se llenará dinámicamente -->
+        </div>
+        <button id="convert-all-btn" class="convert-all-btn" style="display: none;">
+          Convertir todas a WebP
+        </button>
       </div>
     </div>
-    <div class="file-list" id="file-list">
-      <!-- Se llenará dinámicamente -->
-    </div>
-    <button id="convert-all-btn" class="convert-all-btn" style="display: none;">
-      Convertir todas a WebP
-    </button>
-  </div>
-
-  <div class="image-list-section">
-    <h3>🖼️ Imágenes encontradas</h3>
-    <button id="download-report-btn" class="download-report-btn">Descargar reporte</button>
-    <table class="image-list-table">
-      <thead>
-        <tr>
-          <th>URL</th>
-          <th>Formato</th>
-          <th>Peso (KB)</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="image-list">
-        <!-- Se llenará dinámicamente -->
-      </tbody>
-    </table>
   </div>
   
   <script src="popup.js"></script>

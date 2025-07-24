@@ -1,5 +1,29 @@
 // Variables globales
 let isActive = false;
+let localFiles = [];
+let isConverting = false;
+
+// ===== FUNCIONALIDAD DE PESTAÑAS =====
+
+// Función para configurar el sistema de pestañas
+function setupTabs() {
+  const tabs = document.querySelectorAll('.tab');
+  const tabContents = document.querySelectorAll('.tab-content');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetTab = tab.getAttribute('data-tab');
+      
+      // Remover clase active de todas las pestañas y contenidos
+      tabs.forEach(t => t.classList.remove('active'));
+      tabContents.forEach(content => content.classList.remove('active'));
+      
+      // Agregar clase active a la pestaña clickeada y su contenido
+      tab.classList.add('active');
+      document.getElementById(`${targetTab}-tab`).classList.add('active');
+    });
+  });
+}
 
 // Función para convertir imagen a WebP
 async function convertToWebP(imageUrl, quality = 80) {
@@ -297,6 +321,8 @@ function updateStatsAndList() {
 
 // Inicializar cuando se carga el popup
 document.addEventListener('DOMContentLoaded', async () => {
+  // Configurar pestañas primero
+  setupTabs();
   // Obtener el estado inicial
   isActive = await getExtensionStatus();
   updateUI();
@@ -314,10 +340,6 @@ setInterval(updateStatsAndList, 2000);
 document.getElementById('download-report-btn').addEventListener('click', downloadReportCSV);
 
 // ===== FUNCIONALIDAD DE DRAG & DROP PARA IMÁGENES LOCALES =====
-
-// Variables para manejar archivos locales
-let localFiles = [];
-let isConverting = false;
 
 // Función para convertir archivo local a WebP
 async function convertLocalFileToWebP(file, quality = 80) {
