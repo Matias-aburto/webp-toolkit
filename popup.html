@@ -409,6 +409,12 @@
         <div class="file-list" id="file-list">
           <!-- Se llenará dinámicamente -->
         </div>
+        <!-- Slider de calidad de imagen -->
+        <div id="quality-slider-container" style="display: flex; align-items: center; justify-content: center; margin: 16px 0 8px 0; gap: 10px;">
+          <label for="quality-slider" style="font-size: 13px;">Calidad:</label>
+          <input type="range" id="quality-slider" min="1" max="100" value="80" style="width: 160px;">
+          <span id="quality-value" style="font-size: 13px; width: 32px; text-align: right;">80</span>
+        </div>
         <button id="convert-all-btn" class="convert-all-btn" style="display: none;">
           Convertir todas a WebP
         </button>

@@ -341,8 +341,23 @@ document.getElementById('download-report-btn').addEventListener('click', downloa
 
 // ===== FUNCIONALIDAD DE DRAG & DROP PARA IMÁGENES LOCALES =====
 
+// Obtener referencia al slider y valor
+const qualitySlider = document.getElementById('quality-slider');
+const qualityValue = document.getElementById('quality-value');
+
+if (qualitySlider && qualityValue) {
+  qualitySlider.addEventListener('input', () => {
+    qualityValue.textContent = qualitySlider.value;
+  });
+}
+
+// Función para obtener la calidad seleccionada
+function getSelectedQuality() {
+  return qualitySlider ? parseInt(qualitySlider.value, 10) : 80;
+}
+
 // Función para convertir archivo local a WebP
-async function convertLocalFileToWebP(file, quality = 80) {
+async function convertLocalFileToWebP(file, quality) {
     try {
         // Crear FormData con el archivo
         const formData = new FormData();
@@ -464,13 +479,14 @@ async function convertAllFiles() {
     convertAllBtn.disabled = true;
     convertAllBtn.textContent = 'Convirtiendo...';
     
+    const quality = getSelectedQuality();
     try {
         for (let i = 0; i < localFiles.length; i++) {
             const file = localFiles[i];
             convertAllBtn.textContent = `Convirtiendo ${i + 1}/${localFiles.length}...`;
             
             try {
-                await convertLocalFileToWebP(file, 80);
+                await convertLocalFileToWebP(file, quality);
                 console.log(`✅ Convertido: ${file.name}`);
             } catch (error) {
                 console.error(`❌ Error al convertir ${file.name}:`, error);
