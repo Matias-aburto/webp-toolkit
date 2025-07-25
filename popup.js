@@ -410,8 +410,25 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// Función para obtener las dimensiones de una imagen
+function getImageDimensions(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            resolve({
+                width: img.naturalWidth,
+                height: img.naturalHeight
+            });
+        };
+        img.onerror = () => {
+            resolve(null);
+        };
+        img.src = URL.createObjectURL(file);
+    });
+}
+
 // Función para agregar archivos a la lista
-function addFiles(files) {
+async function addFiles(files) {
     Array.from(files).forEach(file => {
         // Verificar que sea una imagen
         if (file.type.startsWith('image/')) {
@@ -422,11 +439,11 @@ function addFiles(files) {
             }
         }
     });
-    updateFileList();
+    await updateFileList();
 }
 
 // Función para actualizar la lista de archivos
-function updateFileList() {
+async function updateFileList() {
     const fileList = document.getElementById('file-list');
     const convertAllBtn = document.getElementById('convert-all-btn');
     
@@ -440,13 +457,24 @@ function updateFileList() {
     
     convertAllBtn.style.display = 'block';
     
-    localFiles.forEach((file, index) => {
+    for (let index = 0; index < localFiles.length; index++) {
+        const file = localFiles[index];
         const fileItem = document.createElement('div');
         fileItem.className = 'file-list-item';
         
         const fileName = document.createElement('div');
         fileName.className = 'file-name';
         fileName.textContent = file.name;
+        fileName.style.cssText = 'text-align: left;';
+        
+        // Obtener dimensiones de la imagen
+        const dimensions = await getImageDimensions(file);
+        const dimensionsText = dimensions ? `${dimensions.width}×${dimensions.height}` : 'N/A';
+        
+        const fileDimensions = document.createElement('div');
+        fileDimensions.className = 'file-dimensions';
+        fileDimensions.textContent = dimensionsText;
+        fileDimensions.style.cssText = 'font-size: 11px; color: #666; margin: 0 8px; min-width: 60px; text-align: left;';
         
         const fileSize = document.createElement('div');
         fileSize.className = 'file-size';
@@ -456,16 +484,17 @@ function updateFileList() {
         removeBtn.className = 'file-remove-btn';
         removeBtn.textContent = '×';
         removeBtn.title = 'Eliminar archivo';
-        removeBtn.onclick = () => {
+        removeBtn.onclick = async () => {
             localFiles.splice(index, 1);
-            updateFileList();
+            await updateFileList();
         };
         
         fileItem.appendChild(fileName);
+        fileItem.appendChild(fileDimensions);
         fileItem.appendChild(fileSize);
         fileItem.appendChild(removeBtn);
         fileList.appendChild(fileItem);
-    });
+    }
 }
 
 // Función para convertir todos los archivos
@@ -526,8 +555,8 @@ function setupDragAndDrop() {
     });
     
     // Selección de archivos
-    fileInput.addEventListener('change', (e) => {
-        addFiles(e.target.files);
+    fileInput.addEventListener('change', async (e) => {
+        await addFiles(e.target.files);
         fileInput.value = ''; // Limpiar input
     });
     
@@ -542,10 +571,10 @@ function setupDragAndDrop() {
         dragDropArea.classList.remove('dragover');
     });
     
-    dragDropArea.addEventListener('drop', (e) => {
+    dragDropArea.addEventListener('drop', async (e) => {
         e.preventDefault();
         dragDropArea.classList.remove('dragover');
-        addFiles(e.dataTransfer.files);
+        await addFiles(e.dataTransfer.files);
     });
     
     // Botón convertir todas
