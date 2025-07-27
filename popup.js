@@ -351,50 +351,83 @@ if (qualitySlider && qualityValue) {
   });
 }
 
+// Configurar validación de escalas
+const scaleCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="scale-"]');
+scaleCheckboxes.forEach(checkbox => {
+  checkbox.addEventListener('change', () => {
+    const selectedScales = getSelectedScales();
+    // Si no hay ninguna escala seleccionada, marcar 1x por defecto
+    if (selectedScales.length === 0) {
+      document.getElementById('scale-1').checked = true;
+    }
+  });
+});
+
 // Función para obtener la calidad seleccionada
 function getSelectedQuality() {
   return qualitySlider ? parseInt(qualitySlider.value, 10) : 80;
 }
 
-// Función para convertir archivo local a WebP
-async function convertLocalFileToWebP(file, quality) {
+// Función para obtener las escalas seleccionadas
+function getSelectedScales() {
+  const scaleCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="scale-"]:checked');
+  return Array.from(scaleCheckboxes).map(cb => parseFloat(cb.value));
+}
+
+// Función para convertir archivo local a WebP con escalas
+async function convertLocalFileToWebP(file, quality, scales = [1]) {
     try {
-        // Crear FormData con el archivo
-        const formData = new FormData();
-        formData.append('image', file);
-        formData.append('quality', quality);
+        const results = [];
+        
+        for (const scale of scales) {
+            // Crear FormData con el archivo
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('quality', quality);
+            formData.append('scale', scale);
 
-        // Hacer petición POST al endpoint
-        const response = await fetch('http://45.63.9.4/convert', {
-            method: 'POST',
-            body: formData
-        });
+            // Hacer petición POST al endpoint
+            const response = await fetch('http://45.63.9.4/convert', {
+                method: 'POST',
+                body: formData
+            });
 
-        if (!response.ok) {
-            throw new Error(`Error en conversión: ${response.status} - ${await response.text()}`);
+            if (!response.ok) {
+                throw new Error(`Error en conversión: ${response.status} - ${await response.text()}`);
+            }
+
+            // Obtener el archivo WebP como blob
+            const webpBlob = await response.blob();
+            
+            // Crear URL para descarga
+            const url = URL.createObjectURL(webpBlob);
+            
+            // Extraer nombre del archivo sin extensión
+            const fileNameWithoutExt = file.name.split('.')[0];
+            
+            // Crear sufijo para la escala
+            const scaleSuffix = scale === 1 ? '' : `_${scale}x`;
+            
+            // Descargar automáticamente
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileNameWithoutExt}${scaleSuffix}_converted.webp`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Limpiar URL
+            URL.revokeObjectURL(url);
+            
+            results.push({ scale, success: true });
+            
+            // Pequeña pausa entre conversiones de diferentes escalas
+            if (scales.length > 1) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
         }
-
-        // Obtener el archivo WebP como blob
-        const webpBlob = await response.blob();
         
-        // Crear URL para descarga
-        const url = URL.createObjectURL(webpBlob);
-        
-        // Extraer nombre del archivo sin extensión
-        const fileNameWithoutExt = file.name.split('.')[0];
-        
-        // Descargar automáticamente
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${fileNameWithoutExt}_converted.webp`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        // Limpiar URL
-        URL.revokeObjectURL(url);
-        
-        return true;
+        return results;
     } catch (error) {
         console.error('Error en conversión:', error);
         throw error;
@@ -509,14 +542,25 @@ async function convertAllFiles() {
     convertAllBtn.textContent = 'Convirtiendo...';
     
     const quality = getSelectedQuality();
+    const scales = getSelectedScales();
+    
+    // Verificar que al menos una escala esté seleccionada
+    if (scales.length === 0) {
+        alert('Por favor selecciona al menos una escala de exportación.');
+        convertAllBtn.textContent = originalText;
+        convertAllBtn.disabled = false;
+        isConverting = false;
+        return;
+    }
+    
     try {
         for (let i = 0; i < localFiles.length; i++) {
             const file = localFiles[i];
             convertAllBtn.textContent = `Convirtiendo ${i + 1}/${localFiles.length}...`;
             
             try {
-                await convertLocalFileToWebP(file, quality);
-                console.log(`✅ Convertido: ${file.name}`);
+                const results = await convertLocalFileToWebP(file, quality, scales);
+                console.log(`✅ Convertido: ${file.name} en ${scales.length} escala(s)`);
             } catch (error) {
                 console.error(`❌ Error al convertir ${file.name}:`, error);
             }
@@ -525,7 +569,8 @@ async function convertAllFiles() {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
         
-        convertAllBtn.textContent = '✅ Todas convertidas';
+        const scaleText = scales.length === 1 ? 'escala' : 'escalas';
+        convertAllBtn.textContent = `✅ Todas convertidas (${scales.length} ${scaleText})`;
         setTimeout(() => {
             convertAllBtn.textContent = originalText;
             convertAllBtn.disabled = false;

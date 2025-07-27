@@ -415,6 +415,34 @@
           <input type="range" id="quality-slider" min="1" max="100" value="80" style="width: 160px;">
           <span id="quality-value" style="font-size: 13px; width: 32px; text-align: right;">80</span>
         </div>
+        
+        <!-- Opciones avanzadas de escalas -->
+        <div id="scale-options-container" style="margin: 16px 0 8px 0;">
+          <div style="font-size: 13px; margin-bottom: 8px; font-weight: bold;">Escalas de exportación:</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px;">
+              <input type="checkbox" id="scale-025" value="0.25" style="margin: 0;">
+              <span>0.25x</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px;">
+              <input type="checkbox" id="scale-05" value="0.5" style="margin: 0;">
+              <span>0.5x</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px;">
+              <input type="checkbox" id="scale-1" value="1" checked style="margin: 0;">
+              <span>1x</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px;">
+              <input type="checkbox" id="scale-15" value="1.5" style="margin: 0;">
+              <span>1.5x</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px;">
+              <input type="checkbox" id="scale-2" value="2" style="margin: 0;">
+              <span>2x</span>
+            </label>
+          </div>
+        </div>
+        
         <button id="convert-all-btn" class="convert-all-btn" style="display: none;">
           Convertir todas a WebP
         </button>
