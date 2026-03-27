@@ -2,6 +2,8 @@
 let isActive = false;
 let localFiles = [];
 let isConverting = false;
+const API_BASE_URL = 'https://webp-converter-old-paper-9258.fly.dev';
+const CONVERT_ENDPOINT = `${API_BASE_URL}/convert`;
 
 // ===== FUNCIONALIDAD DE PESTAÑAS =====
 
@@ -26,7 +28,7 @@ function setupTabs() {
 }
 
 // Función para convertir imagen a WebP
-async function convertToWebP(imageUrl, quality = 80) {
+async function convertToWebP(imageUrl, quality = 80, maxDimensions = {}) {
     try {
         // Extraer el nombre del archivo de la URL
         const urlParts = imageUrl.split('/');
@@ -45,9 +47,17 @@ async function convertToWebP(imageUrl, quality = 80) {
         const formData = new FormData();
         formData.append('image', blob, originalFileName);
         formData.append('quality', quality);
+        
+        // Agregar dimensiones máximas si están definidas
+        if (maxDimensions.maxWidth) {
+            formData.append('maxWidth', maxDimensions.maxWidth);
+        }
+        if (maxDimensions.maxHeight) {
+            formData.append('maxHeight', maxDimensions.maxHeight);
+        }
 
         // Hacer petición POST al endpoint
-        const convertResponse = await fetch('http://45.63.9.4/convert', {
+        const convertResponse = await fetch(CONVERT_ENDPOINT, {
             method: 'POST',
             body: formData
         });
@@ -62,10 +72,19 @@ async function convertToWebP(imageUrl, quality = 80) {
         // Crear URL para descarga
         const url = URL.createObjectURL(webpBlob);
         
+        // Crear sufijo para dimensiones si se aplicaron
+        let dimensionSuffix = '';
+        if (maxDimensions.maxWidth || maxDimensions.maxHeight) {
+            const parts = [];
+            if (maxDimensions.maxWidth) parts.push(`w${maxDimensions.maxWidth}`);
+            if (maxDimensions.maxHeight) parts.push(`h${maxDimensions.maxHeight}`);
+            dimensionSuffix = `_${parts.join('x')}`;
+        }
+        
         // Descargar automáticamente con el nombre original + _converted.webp
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${fileNameWithoutExt}_converted.webp`;
+        a.download = `${fileNameWithoutExt}${dimensionSuffix}_converted.webp`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -282,7 +301,9 @@ function updateStatsAndList() {
             convertBtn.textContent = 'Convirtiendo...';
             
             try {
-              await convertToWebP(img.url, 80);
+              // Obtener dimensiones máximas si están configuradas
+              const maxDimensions = getMaxDimensions();
+              await convertToWebP(img.url, 80, maxDimensions);
               convertBtn.textContent = '✅ Convertido';
               setTimeout(() => {
                 convertBtn.textContent = 'Convertir a WebP';
@@ -374,26 +395,81 @@ function getSelectedScales() {
   return Array.from(scaleCheckboxes).map(cb => parseFloat(cb.value));
 }
 
-// Función para convertir archivo local a WebP con escalas
-async function convertLocalFileToWebP(file, quality, scales = [1]) {
+// Función para obtener las dimensiones máximas
+function getMaxDimensions() {
+  const maxWidth = document.getElementById('max-width-input').value;
+  const maxHeight = document.getElementById('max-height-input').value;
+  
+  return {
+    maxWidth: maxWidth ? parseInt(maxWidth) : null,
+    maxHeight: maxHeight ? parseInt(maxHeight) : null
+  };
+}
+
+// Función para convertir archivo local a WebP con escalas y dimensiones máximas
+async function convertLocalFileToWebP(file, quality, scales = [1], maxDimensions = {}) {
     try {
         const results = [];
         
         for (const scale of scales) {
             // Crear FormData con el archivo
             const formData = new FormData();
-            formData.append('image', file);
+            
+            // Para archivos HEIC, asegurar que se envíe con el tipo correcto
+            const fileNameLower = file.name.toLowerCase();
+            const isHeic = fileNameLower.endsWith('.heic') || fileNameLower.endsWith('.heif');
+            
+            if (isHeic) {
+                // Algunos exploradores entregan HEIC/HEIF como octet-stream.
+                // Forzamos MIME y "format" para que el backend pueda rutear correctamente.
+                const heicMimeType = fileNameLower.endsWith('.heif') ? 'image/heif' : 'image/heic';
+                const heicFormat = fileNameLower.endsWith('.heif') ? 'heif' : 'heic';
+                const heicBlob = new Blob([file], { type: heicMimeType });
+                formData.append('image', heicBlob, file.name);
+                formData.append('format', heicFormat);
+                console.log('Enviando archivo HEIC/HEIF:', {
+                    fileName: file.name,
+                    originalType: file.type,
+                    newType: heicMimeType,
+                    format: heicFormat,
+                    fileSize: file.size
+                });
+            } else {
+                formData.append('image', file);
+            }
+            
             formData.append('quality', quality);
             formData.append('scale', scale);
+            
+            // Agregar dimensiones máximas si están definidas
+            if (maxDimensions.maxWidth) {
+                formData.append('maxWidth', maxDimensions.maxWidth);
+            }
+            if (maxDimensions.maxHeight) {
+                formData.append('maxHeight', maxDimensions.maxHeight);
+            }
 
-            // Hacer petición POST al endpoint
-            const response = await fetch('http://45.63.9.4/convert', {
+            // Hacer petición POST al endpoint con headers adicionales
+            const response = await fetch(CONVERT_ENDPOINT, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'Accept': 'image/webp,image/*,*/*'
+                }
             });
 
             if (!response.ok) {
-                throw new Error(`Error en conversión: ${response.status} - ${await response.text()}`);
+                const errorText = await response.text();
+                console.error('Error del servidor:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorText: errorText,
+                    fileName: file.name,
+                    fileType: file.type,
+                    fileSize: file.size,
+                    isHeic: isHeic
+                });
+                throw new Error(`Error en conversión: ${response.status} - ${errorText}`);
             }
 
             // Obtener el archivo WebP como blob
@@ -408,10 +484,19 @@ async function convertLocalFileToWebP(file, quality, scales = [1]) {
             // Crear sufijo para la escala
             const scaleSuffix = scale === 1 ? '' : `_${scale}x`;
             
+            // Crear sufijo para dimensiones si se aplicaron
+            let dimensionSuffix = '';
+            if (maxDimensions.maxWidth || maxDimensions.maxHeight) {
+                const parts = [];
+                if (maxDimensions.maxWidth) parts.push(`w${maxDimensions.maxWidth}`);
+                if (maxDimensions.maxHeight) parts.push(`h${maxDimensions.maxHeight}`);
+                dimensionSuffix = `_${parts.join('x')}`;
+            }
+            
             // Descargar automáticamente
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${fileNameWithoutExt}${scaleSuffix}_converted.webp`;
+            a.download = `${fileNameWithoutExt}${scaleSuffix}${dimensionSuffix}_converted.webp`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -463,8 +548,14 @@ function getImageDimensions(file) {
 // Función para agregar archivos a la lista
 async function addFiles(files) {
     Array.from(files).forEach(file => {
-        // Verificar que sea una imagen
-        if (file.type.startsWith('image/')) {
+        // Verificar que sea una imagen o un archivo HEIC
+        const isImage = file.type.startsWith('image/');
+        const isHeic = file.name.toLowerCase().endsWith('.heic') || 
+                      file.name.toLowerCase().endsWith('.heif') ||
+                      file.type === 'image/heic' ||
+                      file.type === 'image/heif';
+        
+        if (isImage || isHeic) {
             // Verificar que no esté ya en la lista
             const exists = localFiles.find(f => f.name === file.name && f.size === file.size);
             if (!exists) {
@@ -543,6 +634,7 @@ async function convertAllFiles() {
     
     const quality = getSelectedQuality();
     const scales = getSelectedScales();
+    const maxDimensions = getMaxDimensions();
     
     // Verificar que al menos una escala esté seleccionada
     if (scales.length === 0) {
@@ -559,7 +651,7 @@ async function convertAllFiles() {
             convertAllBtn.textContent = `Convirtiendo ${i + 1}/${localFiles.length}...`;
             
             try {
-                const results = await convertLocalFileToWebP(file, quality, scales);
+                const results = await convertLocalFileToWebP(file, quality, scales, maxDimensions);
                 console.log(`✅ Convertido: ${file.name} en ${scales.length} escala(s)`);
             } catch (error) {
                 console.error(`❌ Error al convertir ${file.name}:`, error);

@@ -403,7 +403,7 @@
             <div class="drag-icon">📁</div>
             <p>Arrastra aquí una o varias imágenes</p>
             <p class="drag-subtitle">o haz clic para seleccionar archivos</p>
-            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+            <input type="file" id="file-input" multiple accept="image/*,.heic,.heif" style="display: none;">
           </div>
         </div>
         <div class="file-list" id="file-list">
@@ -440,6 +440,24 @@
               <input type="checkbox" id="scale-2" value="2" style="margin: 0;">
               <span>2x</span>
             </label>
+          </div>
+        </div>
+        
+        <!-- Opciones de dimensiones máximas -->
+        <div id="dimensions-container" style="margin: 16px 0 8px 0;">
+          <div style="font-size: 13px; margin-bottom: 8px; font-weight: bold;">Dimensiones máximas (opcional):</div>
+          <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label for="max-width-input" style="font-size: 12px;">Ancho máximo:</label>
+              <input type="number" id="max-width-input" placeholder="px" min="1" style="width: 80px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px;">
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label for="max-height-input" style="font-size: 12px;">Alto máximo:</label>
+              <input type="number" id="max-height-input" placeholder="px" min="1" style="width: 80px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px;">
+            </div>
+          </div>
+          <div style="font-size: 11px; color: #666; text-align: center; margin-top: 4px;">
+            Deja vacío para mantener el tamaño original. Se mantendrá la proporción de aspecto.
           </div>
         </div>
         
