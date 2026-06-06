@@ -9,7 +9,7 @@
     "storage"
   ],
   "host_permissions": [
-    "https://webp-converter-old-paper-9258.fly.dev/*"
+    "https://webp.simetry.cl/*"
   ],
   "background": {
     "service_worker": "background.js"

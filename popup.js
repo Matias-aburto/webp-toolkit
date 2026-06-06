@@ -2,7 +2,7 @@
 let isActive = false;
 let localFiles = [];
 let isConverting = false;
-const API_BASE_URL = 'https://webp-converter-old-paper-9258.fly.dev';
+const API_BASE_URL = 'https://webp.simetry.cl';
 const CONVERT_ENDPOINT = `${API_BASE_URL}/convert`;
 
 // ===== FUNCIONALIDAD DE PESTAÑAS =====
